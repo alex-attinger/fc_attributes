@@ -18,10 +18,17 @@ def make8BitGray(src_dir,file_in=[], dest = '.'):
 
 
 def emptyMouthPixels(src_folder,file_list):
-    out = cv2.imread(src_folder+'/'+file_list[0])
+    out = cv2.imread(src_folder+'/'+file_list[0],0)
     out = np.zeros(out.shape)
     for f in file_list:
-        out = out+cv2.imread(src_folder+'/'+f)
+        tmp = cv2.imread(src_folder+'/'+f,0)
+        if not (tmp is None):
+            try:
+                out = out+tmp
+            except ValueError:
+                print(f)
+        else:
+            print(f)
     return out
 
 def getAllFiles(folder):
