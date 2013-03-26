@@ -10,6 +10,8 @@ Created on Thu Mar 14 15:35:54 2013
 import utils
 from cv2 import imread
 import numpy as np
+import featureGeneration as fg
+from sklearn import svm, cross_validation
 
 def main():
 
@@ -32,24 +34,13 @@ def main():
     labs=utils.parseLabelFiles(path+'/mouth_labels','mouth',filenames,cutoffSeq='.png',suffix='_face0.labels')
     
     #make 10 bin hist for each mouth
-    
-    #get grayscale file
-    mouth_open = []
-    mouth_closed = []
-    k = labs.keys();
-    
-    for f in k[1:10]:
-        prefix = f.split('.')[0]
-        f_name = path_ea+'/grayScale/'+prefix+'_0.png'
-        im = imread(f_name)
-        roi = im[0:452,60:452]
-        vals,bins = np.histogram(roi,bins=10,range=(1,255))
-        label = labs[f]
-        if(label=='open' or label=='wideOpen'):
-            mouth_open.append(vals)
-        elif(label=='closed'):
-            mouth_closed.append(vals)
-    return(mouth_open,mouth_closed)
+    data,target = fg.getHistogram(10,(0,xx,xx,xx),labelFileDict = labs,path = pathea+'/grayScale/',ending='_0.png')
+
+    #classifier
+    classifier = svm.SVC(kernel = 'linear')
+    [classifier.fit(X_digits[train], y_digits[train]).score(X_digits[test], y_digits[test])
+...          for train, test in kfold]
+    return
         
 if __name__=='__main__':
     main()
