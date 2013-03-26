@@ -15,6 +15,42 @@ def make8BitGray(src_dir,file_in=[], dest = '.'):
         im = cv2.imread(src_dir+'/'+f,0)
         name = dest+'/'+f
         cv2.imwrite(name,im)
+        
+def mapLabelToNumbers(labelList,mapping):
+    out = []
+    for i in xrange(0,len(labelList)):
+        out.append(mapping[labelList[i]])
+    return out
+    
+def mapMouthLabels2Four(label):
+    '''
+    maps label name strings to 4 numbers, to be used with map function
+    '''
+    if label == 'closed':
+        return 0
+    if label == 'narrow':
+        return 1
+    if label == 'open':
+        return 2
+    if label == 'wideOpen':
+        return 3
+    raise Exception(label +' does not have a mapping')
+    
+def mapMouthLabels2Two(label):
+    '''
+    maps label name strings to 2 numbers, to be used with map function
+    '''
+    if label == 'closed':
+        return 0
+    if label == 'narrow':
+        return 0
+    if label == 'open':
+        return 1
+    if label == 'wideOpen':
+        return 1
+    raise Exception(label +' does not have a mapping')
+
+
 
 
 def emptyMouthPixels(src_folder,file_list):

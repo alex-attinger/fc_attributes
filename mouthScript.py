@@ -12,8 +12,9 @@ from cv2 import imread
 import numpy as np
 import featureGeneration as fg
 from sklearn import svm, cross_validation
+from sklearn.ensemble import RandomForestClassifier
 
-def main():
+def main(nJobs = 1):
 
     path = '/local/attale00/GoodPose'
     path_ea = path+'/extracted_alpha'
@@ -34,13 +35,22 @@ def main():
     labs=utils.parseLabelFiles(path+'/mouth_labels','mouth',filenames,cutoffSeq='.png',suffix='_face0.labels')
     
     #make 10 bin hist for each mouth
-    data,target = fg.getHistogram(10,(0,xx,xx,xx),labelFileDict = labs,path = pathea+'/grayScale/',ending='_0.png')
+    data,target = fg.getHistogram(10,(0,452,60,452),labelFileDict = labs,path = path_ea+'/grayScale/',ending='_0.png')
+    
+    targetNum = map(utils.mapMouthLabels2Two,target)
 
+
+    
     #classifier
-    classifier = svm.SVC(kernel = 'linear')
-    [classifier.fit(X_digits[train], y_digits[train]).score(X_digits[test], y_digits[test])
-...          for train, test in kfold]
-    return
+    linSVM = svm.SVC(kernel = 'linear',C=1)
+    
+    #this takes forever: check if that can be true
+    #scoresLinSVM = cross_validation.cross_val_score(linSVM,data,y=targetNum,n_jobs=-1,verbose = 1)
+    
+    #implement random forest classifier with verbosity level
+    rf = RandomForestClassifier(n_estimators=60, max_features =8 ,max_depth=None,min_split=1, random_state=0,n_jobs=1)    
+    scoresLinSVM = cross_validation.cross_val_score(rf,data,y=targetNum,n_jobs=-1,verbose = 1)
+    return scoresLinSVM
         
 if __name__=='__main__':
-    main()
+    print(main())

@@ -14,16 +14,16 @@ def getHistogram(nbins,roi,labelFileDict=None,path=None,ending=None):
     data = []
     target = []
     
-    k = labs.keys();
+    k = labelFileDict.keys();
     
     
-    for f in k[1:10]:
+    for f in k:
         prefix = f.split('.')[0]
         f_name = path+prefix+ending
         im = imread(f_name)
-        ex = im[roi(0):roi(1),roi(2):roi(3)]
-        vals,bins = np.histogram(roi,bins=10,range=(1,255))
-        label = labs[f]
+        ex = im[roi[0]:roi[1],roi[2]:roi[3]]
+        vals,bins = np.histogram(ex,bins=10,range=(1,255))
+        label = labelFileDict[f]
         data.append(vals)
         target.append(label)
 
