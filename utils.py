@@ -9,12 +9,21 @@ import cv2
 import os
 import h5py
 import numpy as np
+import matplotlib.pyplot as plt
 
 def make8BitGray(src_dir,file_in=[], dest = '.'):
     for f in file_in:
-        im = cv2.imread(src_dir+'/'+f,0)
-        name = dest+'/'+f
-        cv2.imwrite(name,im)
+        try:
+            im = cv2.imread(src_dir+'/'+f,-1)
+            im = cv2.cvtColor(im,cv2.cv.CV_RGB2GRAY)
+            name = dest+'/'+f
+            cv2.imwrite(name,im)
+        except Exception as e:
+            print('did not work for '+f)
+            print(e.message)
+        
+               
+
         
 def mapLabelToNumbers(labelList,mapping):
     out = []
@@ -50,6 +59,22 @@ def mapMouthLabels2Two(label):
         return 1
     raise Exception(label +' does not have a mapping')
 
+def two2MouthLabel(label):
+    if label == 0:
+        return 'closed'
+    if label == 1:
+        return 'open'
+
+def four2MouthLabel(label):
+    if label == 0:
+        return 'closed'
+    if label == 1:
+        return 'narrow'
+    if label == 2:
+        return 'open'
+    if label == 3:
+        return 'wideOpen'
+    
 
 
 
