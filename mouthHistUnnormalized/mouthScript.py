@@ -22,7 +22,7 @@ def main(nJobs = 1):
     path_ea = path+'/extracted_alpha'
     path_adata = path_ea + '/a_data'
     
-    fileNames = utils.getAllFiles(path+'/targets');
+    filenames = utils.getAllFiles(path+'/targets');
     
     attribute = 'mouth'
     
@@ -34,14 +34,63 @@ def main(nJobs = 1):
         
     print('----------------------------')
     print('----------parsing label files------')
-    labs=utils.parseLabelFiles(path+'/mouth_labels','mouth',fileNames,cutoffSeq='.png',suffix='_face0.labels')
+    labs=utils.parseLabelFiles(path+'/mouth_labels','mouth',filenames,cutoffSeq='.png',suffix='_face0.labels')
     print('-----computing Features-----')
     #make 10 bin hist for each mouth
-    #roi = (40,200,100,200)
-    roi = (50,190,110,402)    
-    mouthSet2 = fg.getHistogram(20,roi,hrange=(0,255),labelFileDict = labs,path = path+'/extracted/gradients/Direction/',ending='_0.png')
-    mouthSet2.targetNum=map(utils.mapMouthLabels2Two,mouthSet2.target)
+    mouthSet = fg.getHistogram(10,(0,270,60,452),hrange=(155.,255.0),labelFileDict = labs,path = path_ea+'/grayScale/',ending='_0.png')
+    
+    mouthSet.targetNum = map(utils.mapMouthLabels2Two,mouthSet.target)
+    fpr=[]
+    tpr=[]
+    fnr = []    
+
+    for i in xrange(1,101,5):
+        trainingSet,testSet = mouthSet.splitInTestAndTraining(frac=.6)
+        (a,b,c)=_classify(trainingSet, testSet,n_estimators=i)
+        tpr.append(a)
+        fpr.append(b)
+        fnr.append(c)
+    
+    plt.figure()
+    plt.plot(range(1,101,5),tpr)
+    plt.xlabel('number of trees')
+    plt.ylabel('score')
+    plt.title('.6 training set, max_feature 3, min_split 1' )
    
+    fpr=[]
+    tpr=[]
+    fnr = []
+    for i in xrange(1,20):
+        trainingSet,testSet = mouthSet.splitInTestAndTraining(frac=i*.05)
+        (a,b,c)=_classify(trainingSet, testSet,n_estimators=70)
+        tpr.append(a)
+        fpr.append(b)
+        fnr.append(c)
+    
+    plt.figure()
+    plt.plot(np.arange(0.05,1,0.05),tpr)
+    plt.xlabel('fraction used as training set')
+    plt.ylabel('score')
+    plt.title('ntrees = 70, max_feature 3, min_split 1' )
+    
+    fpr=[]
+    tpr=[]
+    fnr = []
+    for i in xrange(1,11):
+        trainingSet,testSet = mouthSet.splitInTestAndTraining(frac=.7)
+        (a,b,c)=_classify(trainingSet, testSet,n_estimators=70,max_features=i)
+        tpr.append(a)
+        fpr.append(b)
+        fnr.append(c)
+    
+    plt.figure()
+    plt.plot(range(1,11),tpr)
+    plt.xlabel('number of features used')
+    plt.ylabel('score')
+    plt.title('ntrees = 70,frac=.7 min_split 1' )
+    
+    
+    plt.show()
     
     #classifier
     #linSVM = svm.SVC(kernel = 'linear',C=1)
@@ -50,10 +99,9 @@ def main(nJobs = 1):
     #scoresLinSVM = cross_validation.cross_val_score(linSVM,data,y=targetNum,n_jobs=-1,verbose = 1)
     
     #implement random forest classifier with verbosity level
-    rf = RandomForestClassifier(n_estimators=60, max_features =5 ,max_depth=None,min_split=1, random_state=0,n_jobs=1)    
-
-    scoresRF = cross_validation.cross_val_score(rf,mouthSet2.data,y=mouthSet2.targetNum,n_jobs=nJobs,verbose = 1,cv=5)
-    print(scoresRF)    
+    
+    #scoresRF = cross_validation.cross_val_score(rf,mouthSet.data,y=mouthSet.targetNum,n_jobs=nJobs,verbose = 1)
+    #print(scoresRF)    
     return
 
 def _classify(trainingSet, testSet,plotting = False,n_estimators=60,max_features=3):

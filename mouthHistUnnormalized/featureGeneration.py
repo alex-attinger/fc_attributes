@@ -60,39 +60,3 @@ def getHistogram(nbins,roi,labelFileDict=None,hrange=(1.0,255,0),path=None,endin
         out.fileNames.append(f)
 
     return out
-
-def getMeanAndVariance(roi,labelFileDict=None,path=None,ending=None):
-    '''
-
-    roi: tuple with the content (rmin,rmax,cmin,cmax)
-    labelFileDict: dictionary containing filename-label pairs, None for unlabeled data
-    path: path to folder containing images
-    ending: optional alternative ending
-    
-    '''
-    #get grayscale file
-    out = dataContainer()
-    
-    k = labelFileDict.keys();
-    
-    
-    for f in k:
-        try:
-            prefix = f.split('.')[0]
-            f_name = path+prefix+ending
-            im = imread(f_name,-1)
-  
-            ex = im[roi[0]:roi[1],roi[2]:roi[3]]
-            o = ex[ex>0];
-            vals = np.array([o.mean(),o.var()])
-            label = labelFileDict[f]
-            out.data.append(vals)
-            out.target.append(label)
-            out.fileNames.append(f)
-        except Exception as e:
-            print f
-            print len(o)
-            print (e.message)
-            
-
-    return out

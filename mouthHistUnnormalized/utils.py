@@ -11,49 +11,18 @@ import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 
-def make8BitGray(src_dir,file_in=[], dest = '.',normalized=''):
+def make8BitGray(src_dir,file_in=[], dest = '.'):
     for f in file_in:
         try:
             im = cv2.imread(src_dir+'/'+f,-1)
             im = cv2.cvtColor(im,cv2.cv.CV_RGB2GRAY)
             name = dest+'/'+f
-            if normalized=='hist':
-                im=cv2.equalizeHist(im)
-            
             cv2.imwrite(name,im)
         except Exception as e:
             print('did not work for '+f)
             print(e.message)
-            
-def makeGradientImags(src_dir,file_in=[],destX='./gradX/',destY='./gradY/',destMag='./mag/',destDir='./direction/'):
-    for f in file_in:
-        try:
-            im = cv2.imread(src_dir+'/'+f,-1)
-            im = cv2.cvtColor(im,cv2.cv.CV_RGB2GRAY)
-            
-            #the gradients
-            gradX=cv2.Sobel(im,cv2.CV_32F,1,0)
-            gradY=cv2.Sobel(im,cv2.CV_32F,0,1)
-            #magnitude
-            mag=np.hypot(gradY,gradX)
-            #direction
-            dire=np.arctan2(gradY,gradX)
-            #normalizing and writing
-            gradX=cv2.normalize(gradX,gradX,0,255,cv2.NORM_MINMAX,cv2.CV_8U)
-            cv2.imwrite(destX+f,gradX)
-            
-            gradY=cv2.normalize(gradY,gradY,0,255,cv2.NORM_MINMAX,cv2.CV_8U)
-            cv2.imwrite(destY+f,gradY)
-            
-            dire=cv2.normalize(dire,dire,0,255,cv2.NORM_MINMAX,cv2.CV_8U)
-            cv2.imwrite(destDir+f,dire)
-            
-            mag=cv2.normalize(mag,mag,0,255,cv2.NORM_MINMAX,cv2.CV_8U)
-            cv2.imwrite(destMag+f,mag)
-        except Exception as e:
-            print('did not work for '+f)
-            print(e.message)
-            
+        
+               
 
         
 def mapLabelToNumbers(labelList,mapping):
