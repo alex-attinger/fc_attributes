@@ -106,6 +106,11 @@ def four2MouthLabel(label):
     if label == 3:
         return 'wideOpen'
     
+def dilate(im):
+        
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(dilation_size,dilation_size))
+    dilated = cv2.dilate(img,kernel)
+    cv2.imshow('dilation demo',dilated)
 
 
 

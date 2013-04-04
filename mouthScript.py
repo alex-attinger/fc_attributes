@@ -39,9 +39,28 @@ def main(nJobs = 1):
     #make 10 bin hist for each mouth
     #roi = (40,200,100,200)
     roi = (50,190,110,402)    
-    mouthSet2 = fg.getHistogram(20,roi,hrange=(0,255),labelFileDict = labs,path = path+'/extracted/gradients/Direction/',ending='_0.png')
-    mouthSet2.targetNum=map(utils.mapMouthLabels2Two,mouthSet2.target)
+    mouthSet = fg.dataContainer(labs)
+    #fg.getHistogram(20,roi,hrange=(0,255),dataC = mouthSet,path = path+'/extracted/gradients/Direction/',ending='_0.png')
+    fg.getHogFeature(mouthSet,roi,path=path_ea+'/grayScale/',ending='_0.png')
+    mouthSet.targetNum=map(utils.mapMouthLabels2Two,mouthSet.target)
+    n_estimators = range(10,120,10);
+    max_features = range(2,22,2)
+    max_depth = range(5,40,5)
+    min_split = range(1,20,2)
+    
+    score=[]
+    var = []
+    for n in [10]:    
+        scoresRF = _crossValidate(mouthSet, n_estimators =60 ,nJobs = nJobs,max_features = np.sqrt(len(mouthSet.data[0])),min_split = n)
    
+        score.append(scoresRF.mean())
+        var.append(scoresRF.std())
+        
+    print scoresRF
+    plt.errorbar(min_split,score,yerr=var)
+    plt.xlabel('min split')
+    plt.ylabel('cross val score')
+    plt.show()        
     
     #classifier
     #linSVM = svm.SVC(kernel = 'linear',C=1)
@@ -50,11 +69,19 @@ def main(nJobs = 1):
     #scoresLinSVM = cross_validation.cross_val_score(linSVM,data,y=targetNum,n_jobs=-1,verbose = 1)
     
     #implement random forest classifier with verbosity level
-    rf = RandomForestClassifier(n_estimators=60, max_features =5 ,max_depth=None,min_split=1, random_state=0,n_jobs=1)    
-
-    scoresRF = cross_validation.cross_val_score(rf,mouthSet2.data,y=mouthSet2.targetNum,n_jobs=nJobs,verbose = 1,cv=5)
-    print(scoresRF)    
+#    roi_narrow=(60,160,130,382)
+#    extraMask = np.load('/home/attale00/Desktop/emptyMouthMask.npy')
+#    
+#    fg.getMeanAndVariance(roi_narrow,mouthSet,path_ea+'/',extraMask = extraMask,ending='_0.png')
+#    scoresRF = _crossValidate(mouthSet,max_features = 13)
+#    print 'Orientation and mean and cov' +str(scoresRF)    
     return
+    
+def _crossValidate(dataSet,nJobs = 1,n_estimators = 60, max_features=7,max_depth = None,min_split = 1):
+    rf = RandomForestClassifier(n_estimators=n_estimators, max_features =max_features ,max_depth=max_depth,min_split=min_split, random_state=0,n_jobs=1)    
+
+    scoresRF = cross_validation.cross_val_score(rf,dataSet.data,y=dataSet.targetNum,n_jobs=nJobs,cv=3)
+    return scoresRF
 
 def _classify(trainingSet, testSet,plotting = False,n_estimators=60,max_features=3):
     rf = RandomForestClassifier(n_estimators=n_estimators, max_features =max_features ,max_depth=None,min_split=1, random_state=0,n_jobs=1)    

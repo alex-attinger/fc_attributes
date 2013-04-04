@@ -64,6 +64,7 @@ class ClassifiedImViewer:
         name = self.dataset.fileNames[self.counter].split('.')[0]
         name = name+self.suffix
         im = plt.imread(self.path+name)
+        self.ax.cla()
         self.ax.imshow(im)
         if self.dataset.hasbeenClassified:
             text = 'Name: '+name + ', label: '+self.dataset.target[self.counter]+ ', classified as: '+self.dataset.classifiedAs[self.counter]

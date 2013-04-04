@@ -1,13 +1,22 @@
 from cv2 import imread
 import numpy as np
+import skimage.feature as feature
 
 class dataContainer:
-    def __init__(self):
+    def __init__(self,labelFileDict = None):
         self.data=[]
         self.target=[]
         self.fileNames=[]
         self.targetNum=[]
         self.classifiedAs=[]
+        if(labelFileDict):
+            keys=labelFileDict.keys()
+            for key in keys:
+                self.data.append([])
+                self.target.append(labelFileDict[key])
+                self.fileNames.append(key)
+            
+            
         
     def splitInTestAndTraining(self, frac = .6):
         outTest = dataContainer()
@@ -28,10 +37,33 @@ class dataContainer:
             outTest.targetNum.append(self.targetNum[idx[i]])
         return (outTraining,outTest)
         
-        
+def getHogFeature(dataC,roi,path=None,ending=None,):
+    if len(dataC.data)==0:
+        dataC.data=['' for i in xrange(0,len(dataC.fileNames))]
+
+    for i in xrange(0,len(dataC.fileNames)):
+        f=dataC.fileNames[i]        
+        if ending:
+            
+            prefix = f.split('.')[0]
+            f_name = path+prefix+ending
+        else:
+            f_name=path+f
+            
+        im = imread(f_name,-1)
+  
+        ex = im[roi[0]:roi[1],roi[2]:roi[3]]
+
+        vals = feature.hog(ex,orientations=9,pixels_per_cell=(16,16),cells_per_block=(3,3),normalise=False)
+       
+        dataC.data[i].extend(vals)
+     
+
+    return 
+    
         
 
-def getHistogram(nbins,roi,labelFileDict=None,hrange=(1.0,255,0),path=None,ending=None):
+def getHistogram(nbins,roi,dataC=None,hrange=(1.0,255,0),path=None,ending=None):
     '''
     nbins: number of bins for each histogram
     roi: tuple with the content (rmin,rmax,cmin,cmax)
@@ -40,28 +72,34 @@ def getHistogram(nbins,roi,labelFileDict=None,hrange=(1.0,255,0),path=None,endin
     ending: optional alternative ending
     
     '''
-    #get grayscale file
-    out = dataContainer()
     
-    k = labelFileDict.keys();
+    if len(dataC.data)==0:
+        dataC.data=['' for i in xrange(0,len(dataC.fileNames))]
     
     
-    for f in k:
-        prefix = f.split('.')[0]
-        f_name = path+prefix+ending
+    
+    
+    for i in xrange(0,len(dataC.fileNames)):
+        f=dataC.fileNames[i]        
+        if ending:
+            
+            prefix = f.split('.')[0]
+            f_name = path+prefix+ending
+        else:
+            f_name=path+f
+            
         im = imread(f_name,-1)
   
         ex = im[roi[0]:roi[1],roi[2]:roi[3]]
 
         vals,bins = np.histogram(ex,bins=nbins,range=hrange)
-        label = labelFileDict[f]
-        out.data.append(vals)
-        out.target.append(label)
-        out.fileNames.append(f)
+       
+        dataC.data[i].extend(vals)
+     
 
-    return out
+    return 
 
-def getMeanAndVariance(roi,labelFileDict=None,path=None,ending=None):
+def getMeanAndVariance(roi,dataC,path=None,ending=None,extraMask = None,picSize = (512,512)):
     '''
 
     roi: tuple with the content (rmin,rmax,cmin,cmax)
@@ -70,29 +108,41 @@ def getMeanAndVariance(roi,labelFileDict=None,path=None,ending=None):
     ending: optional alternative ending
     
     '''
-    #get grayscale file
-    out = dataContainer()
+    if len(dataC.data)==0:
+        dataC.data=['' for i in xrange(0,len(dataC.fileNames))]
     
-    k = labelFileDict.keys();
+    roi_mask = np.zeros(picSize,dtype=np.bool)
+    roi_mask[roi[0]:roi[1],roi[2]:roi[3]]=True
+    
+    if extraMask is None:
+        compoundMask = roi_mask
+    else:
+        compoundMask = roi_mask & extraMask
     
     
-    for f in k:
+    for i in xrange(0,len(dataC.fileNames)):
         try:
-            prefix = f.split('.')[0]
-            f_name = path+prefix+ending
+            f=dataC.fileNames[i]        
+            if ending is not None:
+            
+                prefix = f.split('.')[0]
+                f_name = path+prefix+ending
+            else:
+                f_name=path+f
+                
             im = imread(f_name,-1)
-  
-            ex = im[roi[0]:roi[1],roi[2]:roi[3]]
-            o = ex[ex>0];
-            vals = np.array([o.mean(),o.var()])
-            label = labelFileDict[f]
-            out.data.append(vals)
-            out.target.append(label)
-            out.fileNames.append(f)
+            red = im[:,:,0][compoundMask]
+            green = im[:,:,1][compoundMask]
+            blue = im[:,:,2][compoundMask]            
+           
+            mean = [red.mean(),green.mean(),blue.mean()]
+            covMat = np.cov([red,green,blue])
+            dataC.data[i].extend(mean)
+            dataC.data[i].extend(covMat.flatten())
+        
         except Exception as e:
-            print f
-            print len(o)
+            print f_name
             print (e.message)
             
 
-    return out
+    return
