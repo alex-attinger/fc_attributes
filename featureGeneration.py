@@ -1,6 +1,8 @@
 from cv2 import imread
+import cv2
 import numpy as np
 import skimage.feature as feature
+import customHog as chog
 
 class dataContainer:
     def __init__(self,labelFileDict = None):
@@ -37,7 +39,7 @@ class dataContainer:
             outTest.targetNum.append(self.targetNum[idx[i]])
         return (outTraining,outTest)
         
-def getHogFeature(dataC,roi,path=None,ending=None,):
+def getHogFeature(dataC,roi,path=None,ending=None,extraMask = None):
     if len(dataC.data)==0:
         dataC.data=['' for i in xrange(0,len(dataC.fileNames))]
 
@@ -54,13 +56,41 @@ def getHogFeature(dataC,roi,path=None,ending=None,):
   
         ex = im[roi[0]:roi[1],roi[2]:roi[3]]
 
-        vals = feature.hog(ex,orientations=9,pixels_per_cell=(16,16),cells_per_block=(3,3),normalise=False)
-       
+        #vals = feature.hog(ex,orientations=9,pixels_per_cell=(16,16),cells_per_block=(3,3),normalise=False)
+        vals = chog.hog(ex,orientations = 9, pixels_per_cell = (16,16),cells_per_block=(3,3),normalise=True,mask = extraMask)
         dataC.data[i].extend(vals)
      
 
-    return 
+    return
+
+def getPixelValues(dataC,roi,path=None,ending=None, mask = None):
     
+     for i in xrange(0,len(dataC.fileNames)):
+        f=dataC.fileNames[i]        
+        if ending:
+            
+            prefix = f.split('.')[0]
+            f_name = path+prefix+ending
+        else:
+            f_name=path+f
+            
+        im = imread(f_name,-1)
+        a,b,c = np.shape(im)
+        if c == 4:
+            im = im[:,:,0:2]
+            
+        ex = im[roi[0]:roi[1],roi[2]:roi[3]]
+        shape = (int((roi[1]-roi[0])/4),int((roi[3]-roi[2])/4))
+        ex = cv2.resize(ex,shape)
+        if mask is not None:
+            mask = cv2.resize(np.uint8(mask),shape)
+            mask = mask>0
+            ex = ex[mask]
+            
+        ex=np.sqrt(ex)
+        vals = ex
+        dataC.data[i].extend(vals)
+
         
 
 def getHistogram(nbins,roi,dataC=None,hrange=(1.0,255,0),path=None,ending=None):

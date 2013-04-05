@@ -41,7 +41,12 @@ def main(nJobs = 1):
     roi = (50,190,110,402)    
     mouthSet = fg.dataContainer(labs)
     #fg.getHistogram(20,roi,hrange=(0,255),dataC = mouthSet,path = path+'/extracted/gradients/Direction/',ending='_0.png')
-    fg.getHogFeature(mouthSet,roi,path=path_ea+'/grayScale/',ending='_0.png')
+    m=np.load('/home/attale00/Desktop/mouthMask.npy')
+    m=m[roi[0]:roi[1],roi[2]:roi[3]]
+    m= m !=True
+  
+    #fg.getHogFeature(mouthSet,roi,path=path_ea+'/grayScale/',ending='_0.png',extraMask = m)
+    fg.getPixelValues(mouthSet,roi,path=path_ea+'/',ending='_0.png',mask =m)    
     mouthSet.targetNum=map(utils.mapMouthLabels2Two,mouthSet.target)
     n_estimators = range(10,120,10);
     max_features = range(2,22,2)
@@ -78,8 +83,9 @@ def main(nJobs = 1):
     return
     
 def _crossValidate(dataSet,nJobs = 1,n_estimators = 60, max_features=7,max_depth = None,min_split = 1):
+    print '-----------cross validation-------------'    
     rf = RandomForestClassifier(n_estimators=n_estimators, max_features =max_features ,max_depth=max_depth,min_split=min_split, random_state=0,n_jobs=1)    
-
+    #cv = cross_validation.ShuffleSplit(len(dataSet.targetNum), n_iter=3,test_size=0.3, random_state=0)
     scoresRF = cross_validation.cross_val_score(rf,dataSet.data,y=dataSet.targetNum,n_jobs=nJobs,cv=3)
     return scoresRF
 

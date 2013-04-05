@@ -11,20 +11,24 @@ import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 
-def make8BitGray(src_dir,file_in=[], dest = '.',normalized=''):
+def make8Bit(src_dir,file_in=[], dest = '.',normalized='',resize=None,color=False):
     for f in file_in:
         try:
             im = cv2.imread(src_dir+'/'+f,-1)
-            im = cv2.cvtColor(im,cv2.cv.CV_RGB2GRAY)
+            if not color:
+                im = cv2.cvtColor(im,cv2.cv.CV_RGB2GRAY)
             name = dest+'/'+f
             if normalized=='hist':
                 im=cv2.equalizeHist(im)
+            if resize is not None:
+                im = cv2.resize(im,resize)
             
             cv2.imwrite(name,im)
         except Exception as e:
             print('did not work for '+f)
             print(e.message)
             
+
 def makeGradientImags(src_dir,file_in=[],destX='./gradX/',destY='./gradY/',destMag='./mag/',destDir='./direction/'):
     for f in file_in:
         try:
