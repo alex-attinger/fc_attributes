@@ -87,7 +87,7 @@ def mapMouthLabels2Two(label):
     if label == 'closed':
         return 0
     if label == 'narrow':
-        return 0
+        return 0 # usually 0
     if label == 'open':
         return 1
     if label == 'wideOpen':

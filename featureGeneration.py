@@ -1,4 +1,4 @@
-from cv2 import imread
+
 import cv2
 import numpy as np
 import skimage.feature as feature
@@ -45,25 +45,25 @@ def getHogFeature(dataC,roi,path=None,ending=None,extraMask = None):
 
     for i in xrange(0,len(dataC.fileNames)):
         f=dataC.fileNames[i]        
-        if ending:
+        if ending is not None:
             
             prefix = f.split('.')[0]
             f_name = path+prefix+ending
         else:
             f_name=path+f
             
-        im = imread(f_name,-1)
+        im = cv2.imread(f_name,-1)
   
         ex = im[roi[0]:roi[1],roi[2]:roi[3]]
 
         #vals = feature.hog(ex,orientations=9,pixels_per_cell=(16,16),cells_per_block=(3,3),normalise=False)
-        vals = chog.hog(ex,orientations = 9, pixels_per_cell = (16,16),cells_per_block=(3,3),normalise=True,mask = extraMask)
+        vals = chog.hog(ex,orientations = 5, pixels_per_cell = (16,16),cells_per_block=(16,8),normalise=True,mask = extraMask)
         dataC.data[i].extend(vals)
      
 
     return
 
-def getPixelValues(dataC,roi,path=None,ending=None, mask = None):
+def getPixelValues(dataC,roi,path=None,ending=None, mask = None,scaleFactor = 4):
     
      for i in xrange(0,len(dataC.fileNames)):
         f=dataC.fileNames[i]        
@@ -74,13 +74,13 @@ def getPixelValues(dataC,roi,path=None,ending=None, mask = None):
         else:
             f_name=path+f
             
-        im = imread(f_name,-1)
-        a,b,c = np.shape(im)
-        if c == 4:
+        im = cv2.imread(f_name,-1)
+        s= np.shape(im)
+        if len(s)>2 and s[2] == 4:
             im = im[:,:,0:2]
             
         ex = im[roi[0]:roi[1],roi[2]:roi[3]]
-        shape = (int((roi[1]-roi[0])/4),int((roi[3]-roi[2])/4))
+        shape = (int((roi[1]-roi[0])/scaleFactor),int((roi[3]-roi[2])/scaleFactor))
         ex = cv2.resize(ex,shape)
         if mask is not None:
             mask = cv2.resize(np.uint8(mask),shape)
@@ -88,7 +88,7 @@ def getPixelValues(dataC,roi,path=None,ending=None, mask = None):
             ex = ex[mask]
             
         ex=np.sqrt(ex)
-        vals = ex
+        vals = ex.flatten()
         dataC.data[i].extend(vals)
 
         
@@ -118,7 +118,7 @@ def getHistogram(nbins,roi,dataC=None,hrange=(1.0,255,0),path=None,ending=None):
         else:
             f_name=path+f
             
-        im = imread(f_name,-1)
+        im = cv2.imread(f_name,-1)
   
         ex = im[roi[0]:roi[1],roi[2]:roi[3]]
 
@@ -160,7 +160,7 @@ def getMeanAndVariance(roi,dataC,path=None,ending=None,extraMask = None,picSize 
             else:
                 f_name=path+f
                 
-            im = imread(f_name,-1)
+            im = cv2.imread(f_name,-1)
             red = im[:,:,0][compoundMask]
             green = im[:,:,1][compoundMask]
             blue = im[:,:,2][compoundMask]            
