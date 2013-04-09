@@ -55,9 +55,9 @@ def main(nJobs = 1):
   
     fg.getHogFeature(mouthSet,roi2,path=path_ea+'/grayScaleSmall/',ending='_0.png',extraMask = m)
     #fg.getPixelValues(mouthSet,roi,path=path_ea+'/',ending='_0.png',mask =m, scaleFactor = 10)    
-        
+    #fg.getColorHistogram(mouthSet,roi,path=path_ea+'/',ending='_0.png',colorspace=None,range=(1.0,255.0),bins = 20)   
     mouthSet.targetNum=map(utils.mapMouthLabels2Two,mouthSet.target)
-    n_estimators = range(10,160,20);
+    n_estimators = range(10,180,20);
     max_features = range(2,22,2)
     max_depth = range(5,40,5)
     max_depth.append(100)
@@ -77,6 +77,40 @@ def main(nJobs = 1):
     plt.xlabel('number of trees')
     plt.ylabel('cross val score')
     
+    mouthSet2 = fg.dataContainer(labs)
+    fg.getColorHistogram(mouthSet2,roi,path=path_ea+'/',ending='_0.png',colorspace='lab',range=(1.,255.0),bins = 20)
+    mouthSet2.targetNum=map(utils.mapMouthLabels2Two,mouthSet2.target)
+    score=[]
+    var = []
+    for n in n_estimators:    
+        scoresRF = _crossValidate(mouthSet2, max_depth = 20,n_estimators =n ,nJobs = nJobs,max_features = np.sqrt(len(mouthSet.data[0])),min_split = 5)
+   
+        score.append(scoresRF.mean())
+        var.append(scoresRF.std())
+        
+    print scoresRF
+    plt.errorbar(n_estimators,score,yerr=var)
+    plt.xlabel('number of trees')
+    plt.ylabel('cross val score')
+    
+     
+
+    fg.getColorHistogram(mouthSet,roi,path=path_ea+'/',ending='_0.png',colorspace='lab',range=(100.0,255.0),bins = 20)
+
+    score=[]
+    var = []
+    for n in n_estimators:    
+        scoresRF = _crossValidate(mouthSet, max_depth = 20,n_estimators =n ,nJobs = nJobs,max_features = np.sqrt(len(mouthSet.data[0])),min_split = 5)
+   
+        score.append(scoresRF.mean())
+        var.append(scoresRF.std())
+        
+    print scoresRF
+    plt.errorbar(n_estimators,score,yerr=var)
+    plt.xlabel('number of trees')
+    plt.ylabel('cross val score')
+    plt.legend(['HOG','LAB','HOG+LAB'])
+    plt.title('20bins')
     
     plt.show()        
     

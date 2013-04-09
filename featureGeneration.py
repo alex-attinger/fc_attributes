@@ -62,6 +62,42 @@ def getHogFeature(dataC,roi,path=None,ending=None,extraMask = None):
      
 
     return
+    
+def getColorHistogram(dataC,roi,path=None,ending=None,colorspace=None,bins = 9,range=(1.0,255.0)):
+    if len(dataC.data)==0:
+        dataC.data=['' for i in xrange(0,len(dataC.fileNames))]
+
+    for i in xrange(0,len(dataC.fileNames)):
+        f=dataC.fileNames[i]        
+        if ending is not None:
+            
+            prefix = f.split('.')[0]
+            f_name = path+prefix+ending
+        else:
+            f_name=path+f
+            
+        im = cv2.imread(f_name,-1)
+        c=np.shape(im)
+        if len(c) <3 or c[2]<3:
+            raise Exception(f+'does not have three color channels')
+        
+        if colorspace is not None:
+            if colorspace in['hsv','HSV']:
+                im = cv2.cvtColor(im,cv2.cv.CV_RGB2HSV)
+            if colorspace in ['hls','HLS']:
+                im = cv2.cvtColor(im,cv2.cv.CV_RGB2HLS)
+            if colorspace in ['lab','LAB','Lab']:
+                im = cv2.cvtColor(im,cv2.cv.CV_RGB2Lab)
+        
+        
+        ex = im[roi[0]:roi[1],roi[2]:roi[3]]
+        for j in xrange(0,3):
+            vals=np.histogram(ex[:,:,j],bins=bins,range=range)[0]
+            dataC.data[i].extend(vals)
+     
+
+    return
+    
 
 def getPixelValues(dataC,roi,path=None,ending=None, mask = None,scaleFactor = 4):
     

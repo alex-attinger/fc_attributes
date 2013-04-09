@@ -30,7 +30,7 @@ def main(nJobs = 1):
     fileNames = utils.getAllFiles(path);
     
 
-    labs=utils.parseLabelFiles(path+'/mouth_labels','mouth',fileNames,cutoffSeq='.png',suffix='_face0.labels')
+    labs=utils.parseLabelFiles('/local/attale00/GoodPose'+'/mouth_labels','mouth',fileNames,cutoffSeq='_0.png',suffix='_face0.labels')
     print('-----computing Features-----')
 
     roi2 = (0,128,0,256)
@@ -45,7 +45,7 @@ def main(nJobs = 1):
     m=dil>0;
 
     #get the features
-    fg.getHogFeature(mouthSet,roi2,path=path,ending=None,extraMask = m)
+    fg.getHogFeature(mouthSet,roi2,path=path+'/',ending=None,extraMask = m)
     
     #map the string labels to numbers (required by sklearn)
     #change the mapping here for different classifiers
@@ -59,7 +59,14 @@ def main(nJobs = 1):
 
     rf.fit(mouthSet.data,mouthSet.targetNum)
     
-    pickle.dump(rf,'RandomForestMouthclassifier')
+    pickle.dump(rf,open('/home/attale00/Desktop/classifiers/RandomForestMouthclassifier_1','w'))
+    
+    f=open('/home/attale00/Desktop/classifiers/RandomForestMouthclassifier_1.txt','w')
+    f.write('Features: getHogFeature(mouthSet,roi2,path=path,ending=None,extraMask = m) on 256*256 grayScale with mouthmask dilated \n')
+    f.write('ROI:(0,128,0,256)\n')
+    f.write('scaled and dilated mouthMask.npy\n')
+    f.write('labels: closed, narrow: 0, open, wideOpen: 1\n')
+    f.close()
     
     
 
