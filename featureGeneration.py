@@ -11,6 +11,7 @@ class dataContainer:
         self.fileNames=[]
         self.targetNum=[]
         self.classifiedAs=[]
+        self.hasBeenClassified = False
         if(labelFileDict):
             keys=labelFileDict.keys()
             for key in keys:
@@ -53,7 +54,9 @@ def getHogFeature(dataC,roi,path=None,ending=None,extraMask = None):
             f_name=path+f
             
         im = cv2.imread(f_name,-1)
-  
+        if im is None:
+            msg = 'did not find '+str(f_name) 
+            raise Exception(msg)
         ex = im[roi[0]:roi[1],roi[2]:roi[3]]
 
         #vals = feature.hog(ex,orientations=9,pixels_per_cell=(16,16),cells_per_block=(3,3),normalise=False)
@@ -79,7 +82,9 @@ def getColorHistogram(dataC,roi,path=None,ending=None,colorspace=None,bins = 9,r
         im = cv2.imread(f_name,-1)
         c=np.shape(im)
         if len(c) <3 or c[2]<3:
-            raise Exception(f+'does not have three color channels')
+            msg = str(f_name)+'does not have three color channels'
+            print msg
+            im = cv2.cvtColor(im,cv2.cv.CV_GRAY2RGB)
         
         if colorspace is not None:
             if colorspace in['hsv','HSV']:
@@ -93,6 +98,9 @@ def getColorHistogram(dataC,roi,path=None,ending=None,colorspace=None,bins = 9,r
         ex = im[roi[0]:roi[1],roi[2]:roi[3]]
         for j in xrange(0,3):
             vals=np.histogram(ex[:,:,j],bins=bins,range=range)[0]
+            if not np.shape(vals)==(bins,):
+                msg = f_name +'has wrong hist shape' + str(np.shape(vals))
+                raise Exception(msg)
             dataC.data[i].extend(vals)
      
 

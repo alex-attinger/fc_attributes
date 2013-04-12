@@ -21,7 +21,8 @@ def viewClassifiedImages(path,dataset,suffix = ".png"):
         name = name+suffix
         im = plt.imread(path+name)
         plt.imshow(im)
-        text = 'Name: '+name + ', label: '+dataset.target[i]+ ', classified as: '+dataset.classifiedAs[i]
+        if dataset.hasBeenClassified:
+            text = 'Name: '+name + ', label: '+dataset.target[i]+ ', classified as: '+dataset.classifiedAs[i]
         t.set_text(text)
         plt.draw()
         plt.waitforbuttonpress()  
@@ -29,13 +30,13 @@ def viewClassifiedImages(path,dataset,suffix = ".png"):
 def MouthTwo2FourComparer(target,test):
     if target==test:
         return True
-    if target=='closed' or target == 'narrow':
-        if test=='closed':
+    if target in ['closed','narrow',0]:
+        if test in ['closed',0]:
             return True
         else:
             return False
-    if target == 'open' or target == 'wideOpen':
-        if test == 'open':
+    if target in ['open','wideOpen']:
+        if test in['open',1]:
             return True
         else:
             return False
@@ -115,7 +116,7 @@ class ClassifiedImViewer:
         im = plt.imread(self.path+name)
         self.ax.cla()
         self.ax.imshow(im)
-        if self.dataset.hasbeenClassified:
+        if self.dataset.hasBeenClassified:
             text = 'Name: '+name + ', label: '+self.dataset.target[self.counter]+ ', classified as: '+self.dataset.classifiedAs[self.counter]
         else:
             text = 'Name: '+name + ', label: '+self.dataset.target[self.counter]

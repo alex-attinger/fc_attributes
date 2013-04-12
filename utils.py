@@ -15,7 +15,7 @@ def make8Bit(src_dir,file_in=[], dest = '.',normalized='',resize=None,color=Fals
     for f in file_in:
         try:
             im = cv2.imread(src_dir+'/'+f,-1)
-            if not color:
+            if not color and len(np.shape(im))==3:
                 im = cv2.cvtColor(im,cv2.cv.CV_RGB2GRAY)
             name = dest+'/'+f
             if normalized=='hist':
@@ -171,6 +171,11 @@ def parseSingleLabelFile(fileName,label):
             f.close()
             return val
     raise Exception('File '+fileName+' did not contain attribute: '+label)
+    
+
+    
+        
+    
         
         
 def parseLabelFiles(folder,labelname,filenames,cutoffSeq='0.png',suffix='face0.labels'):

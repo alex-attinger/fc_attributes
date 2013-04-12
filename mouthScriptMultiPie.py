@@ -19,9 +19,7 @@ import cv2
 
 def main(nJobs = 1):
 
-    path = '/local/attale00/GoodPose'
-    path_ea = path+'/extracted_alpha'
-    path_adata = path_ea + '/a_data'
+    path = '/local/attale00'
     
     fileNames = utils.getAllFiles(path+'/targets');
     
@@ -40,7 +38,7 @@ def main(nJobs = 1):
     #make 10 bin hist for each mouth
     #roi = (40,200,100,200)
     roi = (50,190,110,402) 
-    roi2=(0,128,0,256)
+    roi2=(128,256,0,256)
     mouthSet = fg.dataContainer(labs)
     #fg.getHistogram(20,roi,hrange=(0,255),dataC = mouthSet,path = path+'/extracted/gradients/Direction/',ending='_0.png')
     eM=np.load('/home/attale00/Desktop/mouthMask.npy')
@@ -53,9 +51,9 @@ def main(nJobs = 1):
 #    em=m[roi[0]:roi[1],roi[2]:roi[3]]
 #    m= m !=True
   
-    fg.getHogFeature(mouthSet,roi2,path=path_ea+'/grayScaleSmall/',ending='_0.png',extraMask = m)
+    fg.getHogFeature(mouthSet,roi2,path=path+'/targets/grayScaleSmall/',ending=None,extraMask = None)
     #fg.getPixelValues(mouthSet,roi,path=path_ea+'/',ending='_0.png',mask =m, scaleFactor = 10)    
-    fg.getColorHistogram(mouthSet,roi,path=path_ea+'/',ending='_0.png',colorspace=None,range=(1.0,255.0),bins = 20)   
+    #fg.getColorHistogram(mouthSet,roi,path=path_ea+'/',ending='_0.png',colorspace=None,range=(1.0,255.0),bins = 20)   
     mouthSet.targetNum=map(utils.mapMouthLabels2Two,mouthSet.target)
     n_estimators = range(10,180,20);
     max_features = range(2,22,2)
