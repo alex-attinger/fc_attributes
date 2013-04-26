@@ -12,12 +12,20 @@ class dataContainer:
         self.targetNum=[]
         self.classifiedAs=[]
         self.hasBeenClassified = False
-        if(labelFileDict):
+        if(labelFileDict and type(labelFileDict) is dict):
             keys=labelFileDict.keys()
             for key in keys:
                 self.data.append([])
                 self.target.append(labelFileDict[key])
                 self.fileNames.append(key)
+        elif(labelFileDict and type(labelFileDict) is list):
+            for i in labelFileDict:
+                self.data.append([])
+                self.fileNames.append(i)
+                self.target.append('')
+#        else:
+#            msg='unsupported type as input: ' + str(type(labelFileDict))
+#            raise Exception(msg)
             
             
         
@@ -40,7 +48,7 @@ class dataContainer:
             outTest.targetNum.append(self.targetNum[idx[i]])
         return (outTraining,outTest)
         
-def getHogFeature(dataC,roi,path=None,ending=None,extraMask = None):
+def getHogFeature(dataC,roi,path=None,ending=None,extraMask = None,orientations=3,pixels_per_cell=(8,8),cells_per_block=(4,2)):
     if len(dataC.data)==0:
         dataC.data=['' for i in xrange(0,len(dataC.fileNames))]
 
@@ -60,7 +68,10 @@ def getHogFeature(dataC,roi,path=None,ending=None,extraMask = None):
         ex = im[roi[0]:roi[1],roi[2]:roi[3]]
 
         #vals = feature.hog(ex,orientations=9,pixels_per_cell=(16,16),cells_per_block=(3,3),normalise=False)
-        vals = chog.hog(ex,orientations = 5, pixels_per_cell = (16,16),cells_per_block=(16,8),normalise=True,mask = extraMask)
+        #vals = chog.hog(ex,orientations = 5, pixels_per_cell = (16,16),cells_per_block=(16,8),normalise=True,mask = extraMask)
+        #vals = chog.hog(ex,orientations = 3, pixels_per_cell = (16,16),cells_per_block=(8,4),normalise=True,mask = extraMask)
+        vals = chog.hog(ex,orientations = orientations, pixels_per_cell = pixels_per_cell,cells_per_block=cells_per_block,normalise=True,mask = extraMask)
+
         dataC.data[i].extend(vals)
      
 

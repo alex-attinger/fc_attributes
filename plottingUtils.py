@@ -40,7 +40,7 @@ def MouthTwo2FourComparer(target,test):
             return True
         else:
             return False
-        
+
         
 def plotThreshold(path='/local/attale00/GoodPose/extracted_alpha/grayScale',thresh=100):
 

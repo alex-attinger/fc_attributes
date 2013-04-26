@@ -16,7 +16,7 @@ import sys
 import plottingUtils
 import matplotlib.pyplot as plt
 import cv2
-
+import classifierUtils
 def main(nJobs = 1):
 
     path = '/local/attale00/GoodPose'
@@ -36,11 +36,15 @@ def main(nJobs = 1):
     print('----------------------------')
     print('----------parsing label files------')
     labs=utils.parseLabelFiles(path+'/mouth_labels','mouth',fileNames,cutoffSeq='.png',suffix='_face0.labels')
+    #labs=utils.parseLabelFiles(path+'/mouth_labels/labels','glasses',fileNames,cutoffSeq='.png',suffix='_face0.labels')
+
     print('-----computing Features-----')
     #make 10 bin hist for each mouth
     #roi = (40,200,100,200)
     roi = (50,190,110,402) 
     roi2=(0,128,0,256)
+    roi=(0,64,0,128)
+    #roi2=(128,256,0,256)
     mouthSet = fg.dataContainer(labs)
     #fg.getHistogram(20,roi,hrange=(0,255),dataC = mouthSet,path = path+'/extracted/gradients/Direction/',ending='_0.png')
     eM=np.load('/home/attale00/Desktop/mouthMask.npy')
@@ -53,81 +57,27 @@ def main(nJobs = 1):
 #    em=m[roi[0]:roi[1],roi[2]:roi[3]]
 #    m= m !=True
   
-    fg.getHogFeature(mouthSet,roi2,path=path_ea+'/grayScaleSmall/',ending='_0.png',extraMask = m)
+    fg.getHogFeature(mouthSet,roi2,path=path_ea+'/grayScale128/',ending='_0.png',extraMask = None)
     #fg.getPixelValues(mouthSet,roi,path=path_ea+'/',ending='_0.png',mask =m, scaleFactor = 10)    
-    fg.getColorHistogram(mouthSet,roi,path=path_ea+'/',ending='_0.png',colorspace=None,range=(1.0,255.0),bins = 20)   
+    #fg.getColorHistogram(mouthSet,roi,path=path_ea+'/',ending='_0.png',colorspace=None,range=(1.0,255.0),bins = 20)   
     mouthSet.targetNum=map(utils.mapMouthLabels2Two,mouthSet.target)
-    n_estimators = range(10,180,20);
-    max_features = range(2,22,2)
-    max_depth = range(5,40,5)
-    max_depth.append(100)
+    #mouthSet.targetNum=map(utils.mapGlassesLabels2Two,mouthSet.target)
     
-    min_split = range(1,20,2)
     
     score=[]
-    var = []
-    for n in n_estimators:    
-        scoresRF = _crossValidate(mouthSet, max_depth = 20,n_estimators =n ,nJobs = nJobs,max_features = np.sqrt(len(mouthSet.data[0])),min_split = 5)
-   
-        score.append(scoresRF.mean())
-        var.append(scoresRF.std())
-        
-    print scoresRF
-    plt.errorbar(n_estimators,score,yerr=var)
-    plt.xlabel('number of trees')
-#    plt.ylabel('cross val score')
-    
-#    mouthSet2 = fg.dataContainer(labs)
-#    roi=(256,512,0,512)
-#    fg.getColorHistogram(mouthSet2,roi,path=path+'/targets/',ending=None,colorspace='lab',range=(1.,255.0),bins = 20)
-#    mouthSet2.targetNum=map(utils.mapMouthLabels2Two,mouthSet2.target)
-#    score=[]
-#    var = []
-#    for n in n_estimators:    
-#        scoresRF = _crossValidate(mouthSet2, max_depth = 20,n_estimators =n ,nJobs = nJobs,max_features = np.sqrt(len(mouthSet2.data[0])),min_split = 5)
-#   
-#        score.append(scoresRF.mean())
-#        var.append(scoresRF.std())
-#        
-#    print scoresRF
-#    plt.errorbar(n_estimators,score,yerr=var)
-#    plt.xlabel('number of trees')
-#    plt.ylabel('cross val score')
-    
-     
-
-#    fg.getColorHistogram(mouthSet,roi,path=path_ea+'/',ending='_0.png',colorspace='lab',range=(100.0,255.0),bins = 20)
-#
-#    score=[]
-#    var = []
-#    for n in n_estimators:    
-#        scoresRF = _crossValidate(mouthSet, max_depth = 20,n_estimators =n ,nJobs = nJobs,max_features = np.sqrt(len(mouthSet.data[0])),min_split = 5)
-#   
-#        score.append(scoresRF.mean())
-#        var.append(scoresRF.std())
-#        
-#    print scoresRF
-#    plt.errorbar(n_estimators,score,yerr=var)
-#    plt.xlabel('number of trees')
-#    plt.ylabel('cross val score')
-#    plt.legend(['HOG','LAB','HOG+LAB'])
-#    plt.title('20bins')
-    
+    frac=np.arange(0.2,1.0,.05)
+    for i in frac:
+        trainingSet,testSet=mouthSet.splitInTestAndTraining(frac=i)
+        rf=classifierUtils.standardRF(max_features = np.sqrt(len(mouthSet.data[0])))
+        rf.fit(trainingSet.data,trainingSet.targetNum)
+        score.append(rf.score(testSet.data,testSet.targetNum))
+        testSet.hasBeenClassified=True
+        testSet.classifiedAs=rf.predict(testSet.data)
+        print '---------------- {} -----------'.format(i)
+        classifierUtils.evaluateClassification(testSet,{0:'closed',1:'open'})
+    plt.plot(frac,score,'-*')
     plt.show()        
-    
-    #classifier
-    #linSVM = svm.SVC(kernel = 'linear',C=1)
-    
-    #this takes forever: check if that can be true
-    #scoresLinSVM = cross_validation.cross_val_score(linSVM,data,y=targetNum,n_jobs=-1,verbose = 1)
-    
-    #implement random forest classifier with verbosity level
-#    roi_narrow=(60,160,130,382)
-#    extraMask = np.load('/home/attale00/Desktop/emptyMouthMask.npy')
-#    
-#    fg.getMeanAndVariance(roi_narrow,mouthSet,path_ea+'/',extraMask = extraMask,ending='_0.png')
-#    scoresRF = _crossValidate(mouthSet,max_features = 13)
-#    print 'Orientation and mean and cov' +str(scoresRF)    
+  
     return
     
 def _crossValidate(dataSet,nJobs = 1,n_estimators = 60, max_features=7,max_depth = None,min_split = 1):

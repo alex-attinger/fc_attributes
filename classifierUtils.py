@@ -7,15 +7,15 @@ Created on Fri Apr 12 17:28:40 2013
 
 from sklearn import cross_validation
 from sklearn.ensemble import RandomForestClassifier
-
+import numpy as np
 
 def standardRF(n_estimators = 100,min_split = 10,max_depth = 20,max_features = None):
-    rf = RandomForestClassifier(n_estimators=n_estimators, max_features =max_features ,max_depth=max_depth,min_split=min_split, random_state=0,n_jobs=1)    
+    rf = RandomForestClassifier(n_estimators=n_estimators, max_features =max_features ,max_depth=max_depth,min_samples_split=min_split, random_state=0,n_jobs=1)    
     return rf
 
 
 def standardCrossvalidation(clf,dataSet,n_jobs=1,cv=5):
-    scoresRF = cross_validation.cross_val_score(clf,dataSet.data,y=dataSet.targetNum,n_jobs=n_jobs,cv=cv)
+    scoresRF = cross_validation.cross_val_score(clf,dataSet.data,y=np.array(dataSet.targetNum),n_jobs=n_jobs,cv=cv)
     return scoresRF
     
 

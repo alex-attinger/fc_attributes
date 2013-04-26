@@ -65,7 +65,24 @@ def mapLabelToNumbers(labelList,mapping):
     for i in xrange(0,len(labelList)):
         out.append(mapping[labelList[i]])
     return out
-    
+  
+def mapGlassesLabels2Two(label):
+    '''
+    maps label name strings to 4 numbers, to be used with map function
+    '''
+    if label == 'none':
+        return 0
+    if label == 'light' or label=='thin':
+        return 1
+    if label == 'thick':
+        return 1
+    raise Exception(label +' does not have a mapping')
+def maptwo2GlassesLabel(label):
+    if label == 0:
+        return 'no glasses'
+    if label == 1:
+        return 'glasses'
+  
 def mapMouthLabels2Four(label):
     '''
     maps label name strings to 4 numbers, to be used with map function
@@ -93,6 +110,12 @@ def mapMouthLabels2Two(label):
     if label == 'wideOpen':
         return 1
     raise Exception(label +' does not have a mapping')
+
+def mapSexLabel2Two(label):
+    if label == 'male':
+        return 0
+    if label == 'female':
+        return 1
 
 def two2MouthLabel(label):
     if label == 0:
@@ -137,7 +160,7 @@ def getAllFiles(folder):
     out = []
     
     for f in files:
-        if(os.path.isfile(folder +'/'+f)):
+        if(os.path.isfile(folder +'/'+f) and not f.startswith('_')):
             out.append(f)
     
     return out

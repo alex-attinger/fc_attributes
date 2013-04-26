@@ -17,6 +17,7 @@ Created on Thu Mar 14 15:35:54 2013
 import utils
 import numpy as np
 import featureGeneration as fg
+import classifierUtils
 
 from sklearn.ensemble import RandomForestClassifier
 
@@ -25,7 +26,7 @@ import pickle
 
 def main(nJobs = 1):
 
-    path = '/local/attale00/GoodPose/extracted_alpha/grayScaleSmall'
+    path = '/local/attale00/GoodPose/extracted_alpha/grayScale64'
     
     fileNames = utils.getAllFiles(path);
     
@@ -33,7 +34,7 @@ def main(nJobs = 1):
     labs=utils.parseLabelFiles('/local/attale00/GoodPose'+'/mouth_labels','mouth',fileNames,cutoffSeq='_0.png',suffix='_face0.labels')
     print('-----computing Features-----')
 
-    roi2 = (0,128,0,256)
+    roi2 = (0,32,0,64)
     mouthSet = fg.dataContainer(labs)
 
     #load the mask for the mouth room pixels and dilate it
@@ -45,7 +46,7 @@ def main(nJobs = 1):
     m=dil>0;
 
     #get the features
-    fg.getHogFeature(mouthSet,roi2,path=path+'/',ending=None,extraMask = m)
+    fg.getHogFeature(mouthSet,roi2,path=path+'/',ending=None,extraMask = None)
     
     #map the string labels to numbers (required by sklearn)
     #change the mapping here for different classifiers
@@ -55,17 +56,22 @@ def main(nJobs = 1):
     max_depth = 20
     max_features = np.sqrt(len(mouthSet.data[0]))
     
-    rf = RandomForestClassifier(n_estimators=n_estimators, max_features =max_features ,max_depth=max_depth,min_split=min_split, random_state=0,n_jobs=1)    
+    rf = classifierUtils.standardRF(max_features = max_features)
+    rf2=classifierUtils.standardRF(max_features=max_features)
+    
+    score=classifierUtils.standardCrossvalidation(rf2,mouthSet)
 
     rf.fit(mouthSet.data,mouthSet.targetNum)
     
-    pickle.dump(rf,open('/home/attale00/Desktop/classifiers/RandomForestMouthclassifier_1','w'))
+    pickle.dump(rf,open('/home/attale00/Desktop/classifiers/RandomForestMouthclassifier_12','w'))
     
-    f=open('/home/attale00/Desktop/classifiers/RandomForestMouthclassifier_1.txt','w')
-    f.write('Features: getHogFeature(mouthSet,roi2,path=path,ending=None,extraMask = m) on 256*256 grayScale with mouthmask dilated \n')
-    f.write('ROI:(0,128,0,256)\n')
-    f.write('scaled and dilated mouthMask.npy\n')
+    f=open('/home/attale00/Desktop/classifiers/RandomForestMouthclassifier_12.txt','w')
+    f.write('Trained on aflw\n')
+    f.write('Attribute: mouth' )
+    f.write('Features: getHogFeature(mouthSet,roi2,path=path,ending=None,extraMask = m) on 64*64 grayScale 3 direction bins \n')
+    f.write('ROI:(0,32,0,64)\n')
     f.write('labels: closed, narrow: 0, open, wideOpen: 1\n')
+    f.write('CV Score: {}\n'.format(score))
     f.close()
     
     
