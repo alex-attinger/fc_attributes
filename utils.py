@@ -101,13 +101,13 @@ def mapMouthLabels2Two(label):
     '''
     maps label name strings to 2 numbers, to be used with map function
     '''
-    if label == 'closed':
+    if label in ['closed','close']:
         return 0
     if label == 'narrow':
         return 0 # usually 0
     if label == 'open':
         return 1
-    if label == 'wideOpen':
+    if label in ['wideOpen','wide-open']:
         return 1
     raise Exception(label +' does not have a mapping')
 

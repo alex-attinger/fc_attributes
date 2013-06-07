@@ -17,7 +17,14 @@ def standardRF(n_estimators = 100,min_split = 10,max_depth = 20,max_features = N
 def standardCrossvalidation(clf,dataSet,n_jobs=1,cv=5):
     scoresRF = cross_validation.cross_val_score(clf,dataSet.data,y=np.array(dataSet.targetNum),n_jobs=n_jobs,cv=cv)
     return scoresRF
-    
+
+def dissectedCV(clf,dataSet,cv=3,mapping={0:'closed or narrow',1:'open or wide open'}):
+    for i in range(cv):
+        training, test = dataSet.splitInTestAndTraining(frac=(1-1./cv))
+        clf.fit(training.data,training.targetNum)
+        test.classifiedAs=clf.predict(test.data)
+        test.hasBeenClassified = True
+        evaluateClassification(test,mapping)
 
 def evaluateClassification(dataSet,mapping):
     """

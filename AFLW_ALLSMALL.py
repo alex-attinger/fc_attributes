@@ -1,5 +1,19 @@
 # -*- coding: utf-8 -*-
 """
+Created on Tue Jun  4 10:25:06 2013
+
+@author: attale00
+"""
+
+# -*- coding: utf-8 -*-
+"""
+Created on Tue May  7 17:29:01 2013
+
+@author: attale00
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Fri Apr 12 15:24:39 2013
 
 This script classifies the multipie pictures with the random forest classifer learned on the aflw database pics
@@ -16,40 +30,78 @@ import pickle
 import sys
 import plottingUtils
 import classifierUtils
+from sklearn import svm
+from sklearn.decomposition import FastICA  
+from scipy import linalg
 
 def main(mode):
-    path='/local/attale00/'
+    path = '/local/attale00/AFLW_ALL'
+    path_ea = path+'/color128/'
     
-    allFiles = utils.getAllFiles(path+'Multi-PIE/extracted')
+    fileNames = utils.getAllFiles(path_ea);
     
-    allLabelFiles = utils.getAllFiles(path+'Multi-PIE/labels')
-    #allLabelFiles =  utils.getAllFiles(path+'a_labels')
     
-    labeledImages = [i[0:16]+'.png' for i in allLabelFiles]
     
-    labs=utils.parseLabelFiles(path+'/Multi-PIE/labels','mouth',labeledImages,cutoffSeq='.png',suffix='_face0.labels')
-    #labs=utils.parseLabelFiles(path+'a_labels','mouth',labeledImages,cutoffSeq='.png',suffix='_face0.labels')
     
-        
+    labs=utils.parseLabelFiles(path+'/labels/labels','mouth_opening',fileNames,cutoffSeq='.png',suffix='_face0.labels')
+    
+    
     
     testSet = fg.dataContainer(labs)
     
     
-    roi = (0,32,0,64)
-    #roi = (128,256,0,256)    
+    roi=(50,74,96,160)
+    #roi=(44,84,88,168)    
     
-    eM=np.load('/home/attale00/Desktop/mouthMask.npy')
-    m=cv2.resize(np.uint8(eM),(256,256));
+    
+#    eM=np.load('/home/attale00/Desktop/mouthMask.npy')
+#    m=cv2.resize(np.uint8(eM),(256,256));
+#    strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+#    dil = cv2.dilate(m,strel)
+#    
+#    m=dil>0;
+
+
+    path_mp = '/local/attale00/extracted_pascal__4__Multi-PIE/color128/'
+    mpFiles = utils.getAllFiles(path_mp)
+            
+ 
+    X=fg.getAllImagesFlat(path_ea,testSet.fileNames,(128,256),roi=roi)
+#    Y=fg.getAllImagesFlat(path_mp,mpFiles,(128,256),roi=roi)
+#    Z=np.concatenate((X,Y),axis=0)
+#        
+    # perform ICA
+    ica = FastICA(n_components=50,whiten=True)
+    ica.fit(X)
+    meanI=np.mean(X,axis=0)
+    X1=X-meanI
+    data=ica.transform(X1)
+    filters=ica.components_
+    for i in range(len(fileNames)):
+        testSet.data[i].extend(data[i,:])
+
+
     strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-    dil = cv2.dilate(m,strel)
-    
-    m=dil>0;
+    fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = 3, cells_per_block=(6,2),maskFromAlpha=False)
+    fg.getColorHistogram(testSet,roi,path=path_ea,ending='.png',colorspace='lab',bins=10)
 
   
-    fg.getHogFeature(testSet,roi,path=path+'Multi-PIE_grayScale64/',ending=None,extraMask = None)
-    fg.getColorHistogram(testSet,(50,190,110,402),path = path+'/Multi-PIE/extracted/',ending=None,colorspace='lab',range=(1.,255.0),bins = 20)
+    #pca
+#    n_samples, n_features = X.shape
+#
+#    mean_ = np.mean(X, axis=0)
+#    X -= mean_
+#    U, S, V = linalg.svd(X)
+#    explained_variance_ = (S ** 2) / n_samples
+#    explained_variance_ratio_ = (explained_variance_ /explained_variance_.sum())
+#    K=V / S[:, np.newaxis] * np.sqrt(n_samples)
+#    filters=K[:100]
+#    data=np.dot(X,filters.T)    
+    
+   
+            
+    
     testSet.targetNum=map(utils.mapMouthLabels2Two,testSet.target)
-    #testSet.targetNum = map(utils.mapGlassesLabels2Two,testSet.target)
     rf=classifierUtils.standardRF(max_features = np.sqrt(len(testSet.data[0])),min_split=5,max_depth=40)
     if mode in ['s','v']:
         print 'Classifying with loaded classifier'
@@ -59,28 +111,31 @@ def main(mode):
         classifierUtils.dissectedCV(rf,testSet)
     elif mode in ['save']:
         print 'saving new classifier'
-        _saveRF(testSet,rf)
+        _saveRF(testSet,rf,filters=filters,meanI=meanI)
     else:
         print 'not doing anything'
         
-def _saveRF(testSet,rf):
-    
+def _saveRF(testSet,rf,filters=None,meanI=None):
+   
     rf.fit(testSet.data,testSet.targetNum)
+    root='/home/attale00/Desktop/classifiers/ica/'
     
-    pickle.dump(rf,open('/home/attale00/Desktop/classifiers/RandomForestMouthclassifier_3','w'))
+    pickle.dump(rf,open(root+'rf128ICAHOGCOLOR','w'))
     
-    f=open('/home/attale00/Desktop/classifiers/RandomForestMouthclassifier_4.txt','w')
-    f.write('Source Images: Multi-Pie')
-    f.write('attribute: Glasses')
-    f.write('Features: Hog\n')
-    f.write('Features: getHogFeature(mouthSet,roi2,path=path,ending=None,extraMask = None) on 256*256 grayScale with mouthmask dilated \n')
-    f.write('ROI:(128,256,0,256)\n')
+    f=open(root+'rf128ica.txt','w')
+    f.write('Source Images: AFLWALL')
+    f.write('attribute: Mouth')
+    f.write('Features: ICA')
+    f.write('100 comps \n')
+    f.write('ROI:(50,74,96,160)\n')
  
     f.write('labels: none: 0, light,thick: 1\n')
     f.close()
+    if filters is not None:
+        np.save(root+'filter1',filters)
+        np.save(root+'meanI1',meanI)
         
 
-    
 
 def _classifyWithOld(path,testSet,mode):
     #f=file('/home/attale00/Desktop/classifiers/RandomForestMouthclassifier_1','r')

@@ -95,10 +95,20 @@ def hog(image, orientations=9, pixels_per_cell=(8, 8),
     gy[:-1, :] = np.diff(image, n=1, axis=0)
 
    
+#    plt.subplot(2,2,1)
+#    plt.imshow(gx)
+#    plt.subplot(2,2,2)
+#    plt.imshow(gy)
+#    plt.pause(.5)
+   
     if mask is not None:
         gx[mask] = 0
         gy[mask] = 0
- 
+    
+#    plt.subplot(2,2,3)
+#    plt.imshow(gx)
+#    plt.subplot(2,2,4)
+#    plt.pause(3)
     """
     The third stage aims to produce an encoding that is sensitive to
     local image content while remaining resistant to small changes in
@@ -176,12 +186,13 @@ def hog(image, orientations=9, pixels_per_cell=(8, 8),
     We refer to the normalised block descriptors as Histogram of Oriented
     Gradient (HOG) descriptors.
     """
-
+    #print 'ncellsx {} ncellsy {} by {} bx {} sy {} sx {}'.format(n_cellsx,n_cellsy,by,bx,sy,sx)
     n_blocksx = (n_cellsx - bx) + 1
     n_blocksy = (n_cellsy - by) + 1
     normalised_blocks = np.zeros((n_blocksy, n_blocksx,
                                   by, bx, orientations))
-
+                                  
+   
     for x in range(n_blocksx):
         for y in range(n_blocksy):
             block = orientation_histogram[y:y + by, x:x + bx, :]

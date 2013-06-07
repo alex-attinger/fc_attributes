@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Tue May  7 17:29:01 2013
+
+@author: attale00
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Fri Apr 12 15:24:39 2013
 
 This script classifies the multipie pictures with the random forest classifer learned on the aflw database pics
@@ -18,25 +25,23 @@ import plottingUtils
 import classifierUtils
 
 def main(mode):
-    path='/local/attale00/'
+    path = '/local/attale00/GoodPose'
+    path_ea = path+'/pascal128/'
     
-    allFiles = utils.getAllFiles(path+'Multi-PIE/extracted')
+    fileNames = utils.getAllFiles(path+'/targets');
     
-    allLabelFiles = utils.getAllFiles(path+'Multi-PIE/labels')
-    #allLabelFiles =  utils.getAllFiles(path+'a_labels')
     
-    labeledImages = [i[0:16]+'.png' for i in allLabelFiles]
     
-    labs=utils.parseLabelFiles(path+'/Multi-PIE/labels','mouth',labeledImages,cutoffSeq='.png',suffix='_face0.labels')
-    #labs=utils.parseLabelFiles(path+'a_labels','mouth',labeledImages,cutoffSeq='.png',suffix='_face0.labels')
     
-        
+    labs=utils.parseLabelFiles(path+'/mouth_labels','mouth',fileNames,cutoffSeq='.png',suffix='_face0.labels')
+    
+    
     
     testSet = fg.dataContainer(labs)
     
     
-    roi = (0,32,0,64)
-    #roi = (128,256,0,256)    
+    #roi=(88,165,150,362)
+    roi=(44,84,88,168)    
     
     eM=np.load('/home/attale00/Desktop/mouthMask.npy')
     m=cv2.resize(np.uint8(eM),(256,256));
@@ -46,25 +51,22 @@ def main(mode):
     m=dil>0;
 
   
-    fg.getHogFeature(testSet,roi,path=path+'Multi-PIE_grayScale64/',ending=None,extraMask = None)
-    fg.getColorHistogram(testSet,(50,190,110,402),path = path+'/Multi-PIE/extracted/',ending=None,colorspace='lab',range=(1.,255.0),bins = 20)
+    fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = 5, cells_per_block=(8,3))
     testSet.targetNum=map(utils.mapMouthLabels2Two,testSet.target)
-    #testSet.targetNum = map(utils.mapGlassesLabels2Two,testSet.target)
-    rf=classifierUtils.standardRF(max_features = np.sqrt(len(testSet.data[0])),min_split=5,max_depth=40)
     if mode in ['s','v']:
         print 'Classifying with loaded classifier'
         _classifyWithOld(path,testSet,mode)
     elif mode in ['c']:
         print 'cross validation of data'
-        classifierUtils.dissectedCV(rf,testSet)
+        _cross_validate(testSet)
     elif mode in ['save']:
         print 'saving new classifier'
-        _saveRF(testSet,rf)
+        _saveRF(testSet)
     else:
         print 'not doing anything'
         
-def _saveRF(testSet,rf):
-    
+def _saveRF(testSet):
+    rf=classifierUtils.standardRF(max_features = np.sqrt(len(testSet.data[0])))
     rf.fit(testSet.data,testSet.targetNum)
     
     pickle.dump(rf,open('/home/attale00/Desktop/classifiers/RandomForestMouthclassifier_3','w'))
@@ -79,7 +81,12 @@ def _saveRF(testSet,rf):
     f.write('labels: none: 0, light,thick: 1\n')
     f.close()
         
-
+def _cross_validate(testSet):
+    rf=classifierUtils.standardRF(max_features = np.sqrt(len(testSet.data[0])))
+    print 'Scores'
+    print classifierUtils.standardCrossvalidation(rf,testSet)
+    print '----'
+    return
     
 
 def _classifyWithOld(path,testSet,mode):

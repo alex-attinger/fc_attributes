@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Tue May  7 17:29:01 2013
+
+@author: attale00
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Fri Apr 12 15:24:39 2013
 
 This script classifies the multipie pictures with the random forest classifer learned on the aflw database pics
@@ -16,50 +23,52 @@ import pickle
 import sys
 import plottingUtils
 import classifierUtils
+from sklearn import svm
 
 def main(mode):
-    path='/local/attale00/'
+    path = '/local/attale00/AFLW_ALL'
+    path_ea = path+'/color256/'
     
-    allFiles = utils.getAllFiles(path+'Multi-PIE/extracted')
+    fileNames = utils.getAllFiles(path_ea);
     
-    allLabelFiles = utils.getAllFiles(path+'Multi-PIE/labels')
-    #allLabelFiles =  utils.getAllFiles(path+'a_labels')
+  
     
-    labeledImages = [i[0:16]+'.png' for i in allLabelFiles]
     
-    labs=utils.parseLabelFiles(path+'/Multi-PIE/labels','mouth',labeledImages,cutoffSeq='.png',suffix='_face0.labels')
-    #labs=utils.parseLabelFiles(path+'a_labels','mouth',labeledImages,cutoffSeq='.png',suffix='_face0.labels')
+    labs=utils.parseLabelFiles(path+'/labels/labels','mouth_opening',fileNames,cutoffSeq='.png',suffix='_face0.labels')
+
     
-        
     
     testSet = fg.dataContainer(labs)
     
     
-    roi = (0,32,0,64)
-    #roi = (128,256,0,256)    
+    roi=(88,165,150,362)
+    #roi=(44,84,88,168)    
     
-    eM=np.load('/home/attale00/Desktop/mouthMask.npy')
-    m=cv2.resize(np.uint8(eM),(256,256));
-    strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-    dil = cv2.dilate(m,strel)
     
-    m=dil>0;
+#    eM=np.load('/home/attale00/Desktop/mouthMask.npy')
+#    m=cv2.resize(np.uint8(eM),(256,256));
+#    strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+#    dil = cv2.dilate(m,strel)
+#    
+#    m=dil>0;
 
   
-    fg.getHogFeature(testSet,roi,path=path+'Multi-PIE_grayScale64/',ending=None,extraMask = None)
-    fg.getColorHistogram(testSet,(50,190,110,402),path = path+'/Multi-PIE/extracted/',ending=None,colorspace='lab',range=(1.,255.0),bins = 20)
+    fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = 4, cells_per_block=(26,9),maskFromAlpha=False)
+    fg.getColorHistogram(testSet,roi,path=path_ea,ending='.png',colorspace='lab',bins=20)    
     testSet.targetNum=map(utils.mapMouthLabels2Two,testSet.target)
-    #testSet.targetNum = map(utils.mapGlassesLabels2Two,testSet.target)
+    
     rf=classifierUtils.standardRF(max_features = np.sqrt(len(testSet.data[0])),min_split=5,max_depth=40)
+    print len(testSet.data)
     if mode in ['s','v']:
         print 'Classifying with loaded classifier'
         _classifyWithOld(path,testSet,mode)
     elif mode in ['c']:
         print 'cross validation of data'
+        #classifierUtils.standardCrossvalidation(rf,testSet,n_jobs=5)
         classifierUtils.dissectedCV(rf,testSet)
     elif mode in ['save']:
         print 'saving new classifier'
-        _saveRF(testSet,rf)
+        _saveRF(testSet)
     else:
         print 'not doing anything'
         
@@ -67,14 +76,14 @@ def _saveRF(testSet,rf):
     
     rf.fit(testSet.data,testSet.targetNum)
     
-    pickle.dump(rf,open('/home/attale00/Desktop/classifiers/RandomForestMouthclassifier_3','w'))
+    pickle.dump(rf,open('/home/attale00/Desktop/classifiers/RandomForestMouthclassifier_nTHogColorNoMask','w'))
     
-    f=open('/home/attale00/Desktop/classifiers/RandomForestMouthclassifier_4.txt','w')
-    f.write('Source Images: Multi-Pie')
-    f.write('attribute: Glasses')
+    f=open('/home/attale00/Desktop/classifiers/RandomForestMouthclassifier_nTVVVHogColorNoMask.txt','w')
+    f.write('Source Images: AFLW, but only original dataset of 900 pics')
+    f.write('attribute: Mouth')
     f.write('Features: Hog\n')
-    f.write('Features: getHogFeature(mouthSet,roi2,path=path,ending=None,extraMask = None) on 256*256 grayScale with mouthmask dilated \n')
-    f.write('ROI:(128,256,0,256)\n')
+    f.write('Features: getHogFeature(orientations = 4, cells_per_block=(26,9),maskFromAlpha=False \n')
+    f.write('ROI:(88,165,150,362)\n')
  
     f.write('labels: none: 0, light,thick: 1\n')
     f.close()

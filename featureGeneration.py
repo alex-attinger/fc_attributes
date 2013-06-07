@@ -1,7 +1,6 @@
 
 import cv2
 import numpy as np
-import skimage.feature as feature
 import customHog as chog
 
 class dataContainer:
@@ -48,9 +47,13 @@ class dataContainer:
             outTest.targetNum.append(self.targetNum[idx[i]])
         return (outTraining,outTest)
         
-def getHogFeature(dataC,roi,path=None,ending=None,extraMask = None,orientations=3,pixels_per_cell=(8,8),cells_per_block=(4,2)):
+def getHogFeature(dataC,roi,path=None,ending=None,extraMask = None,orientations=3,pixels_per_cell=(8,8),cells_per_block=(4,2),maskFromAlpha=False,strel=None):
+    print 'generating Hog Feature'    
     if len(dataC.data)==0:
         dataC.data=['' for i in xrange(0,len(dataC.fileNames))]
+    if strel is None:
+        strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(4,4))
+    
 
     for i in xrange(0,len(dataC.fileNames)):
         f=dataC.fileNames[i]        
@@ -63,6 +66,21 @@ def getHogFeature(dataC,roi,path=None,ending=None,extraMask = None,orientations=
             
         im = cv2.imread(f_name,-1)
         if im is None:
+            m='No image found at: '+f_name
+            raise Exception(m)
+        
+        if maskFromAlpha:
+            #alpha channel == 255 for pixels with data, 0 otherwise
+            #erode the alpha region to get rid of boundary effects in the diff computation in chog
+            alpha=im[:,:,3]
+            extraMask = (cv2.erode(alpha,strel)==0)[roi[0]:roi[1],roi[2]:roi[3]] #extra Mask: pixels to be set to 0 after diff computation
+            
+            
+        
+        if im.ndim==3:
+            im = cv2.cvtColor(im,cv2.cv.CV_RGB2GRAY)
+        
+        if im is None:
             msg = 'did not find '+str(f_name) 
             raise Exception(msg)
         ex = im[roi[0]:roi[1],roi[2]:roi[3]]
@@ -74,7 +92,7 @@ def getHogFeature(dataC,roi,path=None,ending=None,extraMask = None,orientations=
 
         dataC.data[i].extend(vals)
      
-
+    print 'hog-feature Lengths: {}'.format(len(vals))
     return
     
 def getColorHistogram(dataC,roi,path=None,ending=None,colorspace=None,bins = 9,range=(1.0,255.0)):
@@ -114,7 +132,7 @@ def getColorHistogram(dataC,roi,path=None,ending=None,colorspace=None,bins = 9,r
                 raise Exception(msg)
             dataC.data[i].extend(vals)
      
-
+    print 'feature length: {}'.format(len(dataC.data[0]))
     return
     
 
@@ -182,7 +200,45 @@ def getHistogram(nbins,roi,dataC=None,hrange=(1.0,255,0),path=None,ending=None):
         dataC.data[i].extend(vals)
      
 
-    return 
+    return
+    
+def getAllImages(path,fileNames,imsize,roi=None):
+    n=len(fileNames)
+    if roi is None:
+        sh=(imsize[0],imsize[1],n)
+    else:
+        sh=(roi[1]-roi[0],roi[3]-roi[2],n)
+    X=np.zeros(sh)
+    for i in range(n):
+        full=path+fileNames[i]
+        im=cv2.imread(full,-1)
+        im = cv2.cvtColor(im,cv2.cv.CV_RGBA2GRAY)
+        if roi is not None:
+            ex = im[roi[0]:roi[1],roi[2]:roi[3]]
+            X[:,:,i]=ex.copy()
+        else:
+            X[:,:,i]=im.copy()
+            
+    return X
+    
+def getAllImagesFlat(path,fileNames,imsize,roi=None):
+    n=len(fileNames)
+    if roi is None:
+        sh=(n,imsize[0]*imsize[1])
+    else:
+        sh=(n,(roi[1]-roi[0])*(roi[3]-roi[2]))
+    X=np.zeros(sh)
+    for i in range(n):
+        full=path+fileNames[i]
+        im=cv2.imread(full,-1)
+        im = cv2.cvtColor(im,cv2.cv.CV_RGBA2GRAY)
+        if roi is not None:
+            ex = im[roi[0]:roi[1],roi[2]:roi[3]]
+            X[i,:]=ex.flatten()
+        else:
+            X[i,:]=im.flatten()
+            
+    return X
 
 def getMeanAndVariance(roi,dataC,path=None,ending=None,extraMask = None,picSize = (512,512)):
     '''

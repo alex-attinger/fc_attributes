@@ -63,7 +63,7 @@ def plotThreshold(path='/local/attale00/GoodPose/extracted_alpha/grayScale',thre
     
     
 
-def plotExcerpt(path='/local/attale00/GoodPose/extracted_alpha/grayScale',roi=(0,250,60,452)):
+def plotExcerpt(path='/local/attale00/GoodPose/extracted_alpha/grayScale',roi=(0,250,60,452),showDiff=''):
 
 
     files = utils.getAllFiles(path)
@@ -77,13 +77,21 @@ def plotExcerpt(path='/local/attale00/GoodPose/extracted_alpha/grayScale',roi=(0
             im = cv2.cvtColor(im,cv2.cv.CV_RGB2GRAY)
         except Exception as e:
             pass
+                
         big[:,0:sh[1]]=im
-        
-        big[roi[0]:roi[1],sh[1]:sh[1]+roi[3]-roi[2]]=im[roi[0]:roi[1],roi[2]:roi[3]]
-        cv2.imshow('test',big)
+        cv2.rectangle(big,(roi[2],roi[1]),(roi[3],roi[0]),255,2)
+        excerpt = im[roi[0]:roi[1],roi[2]:roi[3]]
+    
+        if showDiff in ['y','Y']:
+            excerpt = np.diff(excerpt,n=1,axis=0)
+        if showDiff in ['X','x']:
+            excerpt = np.diff(excerpt,n=1,axis=1)
+        big[roi[0]:roi[1],sh[1]+roi[2]:sh[1]+roi[3]]=excerpt
+        cv2.imshow('Panorama',big)
         k=cv2.waitKey(0)
         if k==27:
-            return
+            break
+    cv2.destroyAllWindows()
 
     print('done')
     
@@ -117,7 +125,7 @@ class ClassifiedImViewer:
         self.ax.cla()
         self.ax.imshow(im)
         if self.dataset.hasBeenClassified:
-            text = 'Name: '+name + ', label: '+self.dataset.target[self.counter]+ ', classified as: '+self.dataset.classifiedAs[self.counter]
+            text = 'Name: '+name + ', label: '+self.dataset.target[self.counter]+ ', classified as: {}'.format(self.dataset.classifiedAs[self.counter])
         else:
             text = 'Name: '+name + ', label: '+self.dataset.target[self.counter]
 
