@@ -47,8 +47,8 @@ def main(mode):
     roi=(50,74,96,160)
     #roi=(44,84,88,168)    
     X=fg.getAllImagesFlat(path_ea,testSet.fileNames,(128,256),roi=roi)
-    W=np.load('/home/attale00/Desktop/classifiers/ica/filter1.npy')
-    m=np.load('/home/attale00/Desktop/classifiers/ica/meanI1.npy')
+    W=np.load('/home/attale00/Desktop/classifiers/ica/filter2.npy')
+    m=np.load('/home/attale00/Desktop/classifiers/ica/meanI2.npy')
     X-=m
     data=np.dot(X,W.T)
     for i in range(len(testSet.fileNames)):
@@ -63,8 +63,8 @@ def main(mode):
     strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
 
   
-    fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = 3, cells_per_block=(6,2),maskFromAlpha=False)
-    fg.getColorHistogram(testSet,roi,path=path_ea,ending='.png',colorspace='lab',bins=10)    
+    #fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = 3, cells_per_block=(6,2),maskFromAlpha=False)
+    #fg.getColorHistogram(testSet,roi,path=path_ea,ending='.png',colorspace='lab',bins=10)    
     testSet.targetNum=map(utils.mapMouthLabels2Two,testSet.target)
     
     rf=classifierUtils.standardRF(max_features = np.sqrt(len(testSet.data[0])),min_split=5,max_depth=40)    
@@ -106,7 +106,7 @@ def _saveRF(testSet,rf):
 def _classifyWithOld(path,testSet,mode):
     #f=file('/home/attale00/Desktop/classifiers/RandomForestMouthclassifier_1','r')
     #np.random.shuffle(testSet.data)    
-    cp='/home/attale00/Desktop/classifiers/ica/rf128ICAHOGCOLOR'
+    cp='/home/attale00/Desktop/classifiers/ica/rf128ICAM'
     print 'using classifier: '+cp
     f=file(cp,'r')
     clf = pickle.load(f)

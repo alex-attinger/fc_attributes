@@ -9,8 +9,8 @@ from sklearn import cross_validation
 from sklearn.ensemble import RandomForestClassifier
 import numpy as np
 
-def standardRF(n_estimators = 100,min_split = 10,max_depth = 20,max_features = None):
-    rf = RandomForestClassifier(n_estimators=n_estimators, max_features =max_features ,max_depth=max_depth,min_samples_split=min_split, random_state=0,n_jobs=1)    
+def standardRF(n_estimators = 100,min_split = 10,max_depth = 20,max_features = None,min_samples_leaf=1):
+    rf = RandomForestClassifier(n_estimators=n_estimators, max_features =max_features ,max_depth=max_depth,min_samples_split=min_split, random_state=0,n_jobs=1,min_samples_leaf=min_samples_leaf)    
     return rf
 
 
@@ -51,8 +51,14 @@ def evaluateClassification(dataSet,mapping):
     N=len(dataSet.targetNum)
     print 'Correct Classifications({} total):'.format(N)
     for k in classes:
+        if nTotal[k]==0:
+            print 'adding one to nTotaal'
+            nTotal[k]+=1
         msg = 'Classified correctly as '+mapping[k] +':\t{:.2} ({}/{})'.format(nCorrect[k]*1.0/nTotal[k],nCorrect[k],nTotal[k])
         n=dataSet.targetNum.count(k)
+        if n == 0:
+            print 'adding one to n'
+            n+=1
         msg1 = 'Classified {} ({}/{}) of all '.format(nCorrect[k]*1.0/n,nCorrect[k],n)+mapping[k]
         print msg
         print msg1

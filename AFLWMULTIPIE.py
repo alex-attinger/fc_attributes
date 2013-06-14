@@ -35,6 +35,17 @@ from sklearn.decomposition import FastICA
 from scipy import linalg
 
 def main(mode):
+    
+    path_mp = '/local/attale00/extracted_pascal__4__Multi-PIE'
+    path_eamp = path_mp+'/color128/'
+   
+    allLabelFiles =  utils.getAllFiles('/local/attale00/a_labels')
+    
+    labeledImages = [i[0:16]+'.png' for i in allLabelFiles]
+    
+    #labs=utils.parseLabelFiles(path+'/Multi-PIE/labels','mouth',labeledImages,cutoffSeq='.png',suffix='_face0.labels')
+    labsmp=utils.parseLabelFiles('/local/attale00/a_labels','mouth',labeledImages,cutoffSeq='.png',suffix='_face0.labels')    
+    
     path = '/local/attale00/AFLW_ALL'
     path_ea = path+'/color128/'
     
@@ -44,11 +55,11 @@ def main(mode):
     
     
     labs=utils.parseLabelFiles(path+'/labels/labels','mouth_opening',fileNames,cutoffSeq='.png',suffix='_face0.labels')
-    
+
     
     
     testSet = fg.dataContainer(labs)
-    
+    testSetmp = fg.dataContainer(labsmp)
     
     roi=(50,74,96,160)
     #roi=(44,84,88,168)    
@@ -62,29 +73,35 @@ def main(mode):
 #    m=dil>0;
 
 
-    path_mp = '/local/attale00/extracted_pascal__4__Multi-PIE/color128/'
-    mpFiles = utils.getAllFiles(path_mp)
+   
+    
             
  
     X=fg.getAllImagesFlat(path_ea,testSet.fileNames,(128,256),roi=roi)
-    Y=fg.getAllImagesFlat(path_mp,mpFiles,(128,256),roi=roi)
+    Y=fg.getAllImagesFlat(path_eamp,testSetmp.fileNames,(128,256),roi=roi)
     Z=np.concatenate((X,Y),axis=0)
 #        
     # perform ICA
-    ica = FastICA(n_components=50,whiten=True)
+    ica = FastICA(n_components=100,whiten=True)
     ica.fit(Z)
-    meanI=np.mean(X,axis=0)
+    meanI=np.mean(Z,axis=0)
     X1=X-meanI
+    Y1=Y-meanI
     data=ica.transform(X1)
+    datamp = ica.transform(Y1)
     filters=ica.components_
-    for i in range(len(fileNames)):
+    for i in range(len(testSet.fileNames)):
         testSet.data[i].extend(data[i,:])
-
-
+        
+    for i in range(len(testSetmp.fileNames)):
+        testSetmp.data[i].extend(datamp[i,:])
+    
     strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-    #fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = 3, cells_per_block=(6,2),maskFromAlpha=False)
-    #fg.getColorHistogram(testSet,roi,path=path_ea,ending='.png',colorspace='lab',bins=10)
-
+    fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = 3, cells_per_block=(6,2),maskFromAlpha=False)
+    fg.getColorHistogram(testSet,roi,path=path_ea,ending='.png',colorspace='lab',bins=10)
+    
+    fg.getHogFeature(testSetmp,roi,path=path_eamp,ending='.png',extraMask = None,orientations = 3, cells_per_block=(6,2),maskFromAlpha=False)
+    fg.getColorHistogram(testSetmp,roi,path=path_eamp,ending='.png',colorspace='lab',bins=10)
   
     #pca
 #    n_samples, n_features = X.shape
@@ -99,7 +116,7 @@ def main(mode):
 #    data=np.dot(X,filters.T)    
     
    
-            
+    testSet.addContainer(testSetmp)
     
     testSet.targetNum=map(utils.mapMouthLabels2Two,testSet.target)
     rf=classifierUtils.standardRF(max_features = np.sqrt(len(testSet.data[0])),min_split=5,max_depth=40)

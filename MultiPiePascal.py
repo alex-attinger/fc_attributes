@@ -44,13 +44,6 @@ def main(mode):
     labs=utils.parseLabelFiles('/local/attale00/a_labels','mouth',labeledImages,cutoffSeq='.png',suffix='_face0.labels')
     
     
-    #fileNames = utils.getAllFiles(path_ea);
-    
-    
-    
-    
-    #labs=utils.parseLabelFiles(path+'/labels/labels','mouth_opening',fileNames,cutoffSeq='.png',suffix='_face0.labels')
-    
     
     
     testSet = fg.dataContainer(labs)

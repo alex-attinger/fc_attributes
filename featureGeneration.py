@@ -17,6 +17,7 @@ class dataContainer:
                 self.data.append([])
                 self.target.append(labelFileDict[key])
                 self.fileNames.append(key)
+                self.targetNum.append(None)
         elif(labelFileDict and type(labelFileDict) is list):
             for i in labelFileDict:
                 self.data.append([])
@@ -46,6 +47,13 @@ class dataContainer:
             outTest.fileNames.append(self.fileNames[idx[i]])
             outTest.targetNum.append(self.targetNum[idx[i]])
         return (outTraining,outTest)
+    def addContainer(self,Y):
+        idx = len(Y.data)
+        for i in range(idx):
+            self.data.append(Y.data[i])
+            self.target.append(Y.target[i])
+            self.fileNames.append(Y.fileNames[i])
+            self.targetNum.append(Y.targetNum[i])
         
 def getHogFeature(dataC,roi,path=None,ending=None,extraMask = None,orientations=3,pixels_per_cell=(8,8),cells_per_block=(4,2),maskFromAlpha=False,strel=None):
     print 'generating Hog Feature'    
@@ -83,7 +91,10 @@ def getHogFeature(dataC,roi,path=None,ending=None,extraMask = None,orientations=
         if im is None:
             msg = 'did not find '+str(f_name) 
             raise Exception(msg)
-        ex = im[roi[0]:roi[1],roi[2]:roi[3]]
+        if roi is None:
+            ex=im
+        else:
+            ex = im[roi[0]:roi[1],roi[2]:roi[3]]
 
         #vals = feature.hog(ex,orientations=9,pixels_per_cell=(16,16),cells_per_block=(3,3),normalise=False)
         #vals = chog.hog(ex,orientations = 5, pixels_per_cell = (16,16),cells_per_block=(16,8),normalise=True,mask = extraMask)
@@ -123,8 +134,10 @@ def getColorHistogram(dataC,roi,path=None,ending=None,colorspace=None,bins = 9,r
             if colorspace in ['lab','LAB','Lab']:
                 im = cv2.cvtColor(im,cv2.cv.CV_RGB2Lab)
         
-        
-        ex = im[roi[0]:roi[1],roi[2]:roi[3]]
+        if roi is None:
+            ex=im
+        else:
+            ex = im[roi[0]:roi[1],roi[2]:roi[3]]
         for j in xrange(0,3):
             vals=np.histogram(ex[:,:,j],bins=bins,range=range)[0]
             if not np.shape(vals)==(bins,):
@@ -228,15 +241,21 @@ def getAllImagesFlat(path,fileNames,imsize,roi=None):
     else:
         sh=(n,(roi[1]-roi[0])*(roi[3]-roi[2]))
     X=np.zeros(sh)
+    
     for i in range(n):
-        full=path+fileNames[i]
-        im=cv2.imread(full,-1)
-        im = cv2.cvtColor(im,cv2.cv.CV_RGBA2GRAY)
-        if roi is not None:
-            ex = im[roi[0]:roi[1],roi[2]:roi[3]]
-            X[i,:]=ex.flatten()
-        else:
-            X[i,:]=im.flatten()
+        try:
+            full=path+fileNames[i]
+            im=cv2.imread(full,-1)
+            if im.ndim>2:
+                im = cv2.cvtColor(im,cv2.cv.CV_RGBA2GRAY)
+            if roi is not None:
+                ex = im[roi[0]:roi[1],roi[2]:roi[3]]
+                X[i,:]=ex.flatten()
+            else:
+                X[i,:]=im.flatten()
+        except Exception as e:
+            print 'Error '+ full
+            raise e
             
     return X
 

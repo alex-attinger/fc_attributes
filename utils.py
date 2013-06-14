@@ -11,6 +11,23 @@ import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 
+def mirror(src_dir,file_in=[],dest='.',roi=None):
+    for f in file_in:
+        try:
+            im=cv2.imread(src_dir+'/'+f,-1)
+            
+            if roi is not None:
+                ex = im[roi[0]:roi[1],roi[2]:roi[3]]
+            else:
+                ex = im
+                
+            flipped = cv2.flip(ex,1)
+            cv2.imwrite(dest+'/'+f,flipped)
+        except Exception as e:
+            print 'did not work for: '+f
+            print (e.message)
+                
+
 def make8Bit(src_dir,file_in=[], dest = '.',normalized='',resize=None,color=False):
     for f in file_in:
         try:
@@ -214,8 +231,12 @@ def parseLabelFiles(folder,labelname,filenames,cutoffSeq='0.png',suffix='face0.l
     cutofflen = len(cutoffSeq)
     for fil in filenames:
         name = folder +'/'+fil[0:len(fil)-cutofflen]+suffix
-        val = parseSingleLabelFile(name,labelname)
-        labels[fil]=val
+        try:
+            val = parseSingleLabelFile(name,labelname)
+            labels[fil]=val
+        except Exception as e:
+            print e
+        
     
     return labels
     

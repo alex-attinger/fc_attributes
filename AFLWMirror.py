@@ -49,36 +49,30 @@ def main(mode):
     
     testSet = fg.dataContainer(labs)
     
+    testSetMirror = fg.dataContainer(labs)
+    for f in range(len(testSetMirror.fileNames)):
+        testSetMirror.fileNames[f]+='M'
+    
     
     roi=(50,74,96,160)
-    #roi=(44,84,88,168)    
-    
-    
-#    eM=np.load('/home/attale00/Desktop/mouthMask.npy')
-#    m=cv2.resize(np.uint8(eM),(256,256));
-#    strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-#    dil = cv2.dilate(m,strel)
-#    
-#    m=dil>0;
-
-
-    path_mp = '/local/attale00/extracted_pascal__4__Multi-PIE/color128/'
-    mpFiles = utils.getAllFiles(path_mp)
-            
  
+ 
+
     X=fg.getAllImagesFlat(path_ea,testSet.fileNames,(128,256),roi=roi)
-    Y=fg.getAllImagesFlat(path_mp,mpFiles,(128,256),roi=roi)
+    Y=fg.getAllImagesFlat(path+'/mirror128/',testSet.fileNames,(128,256),roi=roi)
     Z=np.concatenate((X,Y),axis=0)
-#        
     # perform ICA
-    ica = FastICA(n_components=50,whiten=True)
+    ica = FastICA(n_components=100,whiten=True)
     ica.fit(Z)
-    meanI=np.mean(X,axis=0)
+    meanI=np.mean(Z,axis=0)
     X1=X-meanI
+    Y1=Y-meanI    
     data=ica.transform(X1)
+    datam=ica.transform(Y1)
     filters=ica.components_
     for i in range(len(fileNames)):
         testSet.data[i].extend(data[i,:])
+        testSetMirror.data[i].extend(datam[i,:])
 
 
     strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
@@ -98,7 +92,7 @@ def main(mode):
 #    filters=K[:100]
 #    data=np.dot(X,filters.T)    
     
-   
+    testSet.addContainer(testSetMirror)
             
     
     testSet.targetNum=map(utils.mapMouthLabels2Two,testSet.target)
@@ -120,10 +114,10 @@ def _saveRF(testSet,rf,filters=None,meanI=None):
     rf.fit(testSet.data,testSet.targetNum)
     root='/home/attale00/Desktop/classifiers/ica/'
     
-    pickle.dump(rf,open(root+'rf128ICAHOGCOLOR','w'))
+    pickle.dump(rf,open(root+'rf128ICAM','w'))
     
     f=open(root+'rf128ica.txt','w')
-    f.write('Source Images: AFLWALL')
+    f.write('Source Images: AFLWALL with mirrors')
     f.write('attribute: Mouth')
     f.write('Features: ICA')
     f.write('100 comps \n')
@@ -132,8 +126,8 @@ def _saveRF(testSet,rf,filters=None,meanI=None):
     f.write('labels: none: 0, light,thick: 1\n')
     f.close()
     if filters is not None:
-        np.save(root+'filter1',filters)
-        np.save(root+'meanI1',meanI)
+        np.save(root+'filter2',filters)
+        np.save(root+'meanI2',meanI)
         
 
 

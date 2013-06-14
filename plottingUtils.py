@@ -10,7 +10,15 @@ import utils
 import cv2
 
 
-
+def showICAComponents(components,size,nR,nC):
+    plt.figure()
+    counter = 1
+    for r in range(nR):
+        for c in range(nC):
+            plt.subplot(nR,nC,counter)
+            counter+=1
+            plt.imshow(components[counter-1,:].reshape(size[0],size[1]), cmap="gray")
+            plt.axis("off")
     
 def viewClassifiedImages(path,dataset,suffix = ".png"):
 

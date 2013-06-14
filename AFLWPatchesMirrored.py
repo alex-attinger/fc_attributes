@@ -5,22 +5,6 @@ Created on Tue Jun  4 10:25:06 2013
 @author: attale00
 """
 
-# -*- coding: utf-8 -*-
-"""
-Created on Tue May  7 17:29:01 2013
-
-@author: attale00
-"""
-
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Apr 12 15:24:39 2013
-
-This script classifies the multipie pictures with the random forest classifer learned on the aflw database pics
-. It was trained on hog features only on the down scaled images. see the accompanying info file to the classfier for details
-
-@author: attale00
-"""
 
 import utils
 import featureGeneration as fg
@@ -31,26 +15,36 @@ import sys
 import plottingUtils
 import classifierUtils
 from sklearn import svm
+from sklearn import linear_model
 from sklearn.decomposition import FastICA  
 from scipy import linalg
 
 def main(mode):
-    path = '/local/attale00/AFLW_ALL'
-    path_ea = path+'/color128/'
-    
+    path = '/local/attale00/AFLW_ALL/'
+    path_ea = '/local/attale00/AFLW_cropped/cropped3/'
+#    
     fileNames = utils.getAllFiles(path_ea);
-    
-    
-    
+#    minr = 10000;
+#    for f in fileNames:
+#        im = cv2.imread(path_ea+f,-1)
+#        if im.shape[0]!=40 or im.shape[1]!=120:
+#            print f
+#            print im.shape
+#        minr = minr if im.shape[0]>= minr else im.shape[0]
+#    
+#    print minr
+#    
     
     labs=utils.parseLabelFiles(path+'/labels/labels','mouth_opening',fileNames,cutoffSeq='.png',suffix='_face0.labels')
     
     
     
     testSet = fg.dataContainer(labs)
+    testSetMirror = fg.dataContainer(labs)
+    for f in range(len(testSetMirror.fileNames)):
+        testSetMirror.fileNames[f]+='M'
     
-    
-    roi=(50,74,96,160)
+    roi=None    
     #roi=(44,84,88,168)    
     
     
@@ -62,29 +56,37 @@ def main(mode):
 #    m=dil>0;
 
 
-    path_mp = '/local/attale00/extracted_pascal__4__Multi-PIE/color128/'
-    mpFiles = utils.getAllFiles(path_mp)
             
  
-    X=fg.getAllImagesFlat(path_ea,testSet.fileNames,(128,256),roi=roi)
-    Y=fg.getAllImagesFlat(path_mp,mpFiles,(128,256),roi=roi)
+    X=fg.getAllImagesFlat(path_ea,testSet.fileNames,(40,120),roi=roi)
+    Y=fg.getAllImagesFlat('/local/attale00/AFLW_cropped/mirrored/',testSet.fileNames,(40,120),roi=roi)
     Z=np.concatenate((X,Y),axis=0)
-#        
+    
     # perform ICA
-    ica = FastICA(n_components=50,whiten=True)
+    ica = FastICA(n_components=100,whiten=True)
     ica.fit(Z)
-    meanI=np.mean(X,axis=0)
+    meanI=np.mean(Z,axis=0)
     X1=X-meanI
+    Y1=Y-meanI    
     data=ica.transform(X1)
+    datam=ica.transform(Y1)
     filters=ica.components_
     for i in range(len(fileNames)):
         testSet.data[i].extend(data[i,:])
+        testSetMirror.data[i].extend(datam[i,:])
+#        
+
 
 
     strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-    #fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = 3, cells_per_block=(6,2),maskFromAlpha=False)
-    #fg.getColorHistogram(testSet,roi,path=path_ea,ending='.png',colorspace='lab',bins=10)
-
+    fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = 5, cells_per_block=(3,3),pixels_per_cell=(24,8),maskFromAlpha=False)
+    
+    fg.getColorHistogram(testSet,roi,path=path_ea,ending='.png',colorspace='lab',bins=20)
+    #mirror part
+    fg.getHogFeature(testSetMirror,roi,path='/local/attale00/AFLW_cropped/mirrored/', ending='.png',orientations = 5, cells_per_block=(3,3),pixels_per_cell=(24,8))    
+    fg.getColorHistogram(testSetMirror,roi,path='/local/attale00/AFLW_cropped/mirrored/',ending = '.png',colorspace='lab',bins=20)
+        
+    testSet.addContainer(testSetMirror)
   
     #pca
 #    n_samples, n_features = X.shape
@@ -102,7 +104,9 @@ def main(mode):
             
     
     testSet.targetNum=map(utils.mapMouthLabels2Two,testSet.target)
-    rf=classifierUtils.standardRF(max_features = np.sqrt(len(testSet.data[0])),min_split=5,max_depth=40)
+    rf=classifierUtils.standardRF(max_features = 17,min_split=7,max_depth=40,n_estimators=90)
+    #rf = svm.NuSVC()
+    #rf = linear_model.SGDClassifier(loss='perceptron', eta0=1, learning_rate='constant', penalty=None)    
     if mode in ['s','v']:
         print 'Classifying with loaded classifier'
         _classifyWithOld(path,testSet,mode)
@@ -118,16 +122,18 @@ def main(mode):
 def _saveRF(testSet,rf,filters=None,meanI=None):
    
     rf.fit(testSet.data,testSet.targetNum)
-    root='/home/attale00/Desktop/classifiers/ica/'
+    root='/home/attale00/Desktop/classifiers/patches/'
     
-    pickle.dump(rf,open(root+'rf128ICAHOGCOLOR','w'))
+    pickle.dump(rf,open(root+'rfICAHogColorMirror','w'))
     
-    f=open(root+'rf128ica.txt','w')
-    f.write('Source Images: AFLWALL')
+    f=open(root+'rficahogcolormirror.txt','w')
+    f.write('Source Images: AFLWALL Patches Mirror')
     f.write('attribute: Mouth')
-    f.write('Features: ICA')
+    f.write('Features: ICA\n')
     f.write('100 comps \n')
-    f.write('ROI:(50,74,96,160)\n')
+    f.write('20 color bins \n')
+    f.write('ppc 24,8, cpb 3,3 dir 5 \n')
+    #f.write('ROI:(50,74,96,160)\n')
  
     f.write('labels: none: 0, light,thick: 1\n')
     f.close()

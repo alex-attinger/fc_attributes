@@ -31,17 +31,25 @@ import sys
 import plottingUtils
 import classifierUtils
 from sklearn import svm
+from sklearn import linear_model
 from sklearn.decomposition import FastICA  
 from scipy import linalg
 
 def main(mode):
-    path = '/local/attale00/AFLW_ALL'
-    path_ea = path+'/color128/'
-    
+    path = '/local/attale00/AFLW_ALL/'
+    path_ea = '/local/attale00/AFLW_cropped/cropped3/'
+#    
     fileNames = utils.getAllFiles(path_ea);
-    
-    
-    
+#    minr = 10000;
+#    for f in fileNames:
+#        im = cv2.imread(path_ea+f,-1)
+#        if im.shape[0]!=40 or im.shape[1]!=120:
+#            print f
+#            print im.shape
+#        minr = minr if im.shape[0]>= minr else im.shape[0]
+#    
+#    print minr
+#    
     
     labs=utils.parseLabelFiles(path+'/labels/labels','mouth_opening',fileNames,cutoffSeq='.png',suffix='_face0.labels')
     
@@ -50,7 +58,8 @@ def main(mode):
     testSet = fg.dataContainer(labs)
     
     
-    roi=(50,74,96,160)
+    roi=(0,37,0,115)
+    roi=None    
     #roi=(44,84,88,168)    
     
     
@@ -62,28 +71,32 @@ def main(mode):
 #    m=dil>0;
 
 
-    path_mp = '/local/attale00/extracted_pascal__4__Multi-PIE/color128/'
-    mpFiles = utils.getAllFiles(path_mp)
             
  
-    X=fg.getAllImagesFlat(path_ea,testSet.fileNames,(128,256),roi=roi)
-    Y=fg.getAllImagesFlat(path_mp,mpFiles,(128,256),roi=roi)
-    Z=np.concatenate((X,Y),axis=0)
-#        
-    # perform ICA
-    ica = FastICA(n_components=50,whiten=True)
-    ica.fit(Z)
-    meanI=np.mean(X,axis=0)
-    X1=X-meanI
-    data=ica.transform(X1)
-    filters=ica.components_
+    X=fg.getAllImagesFlat(path_ea,testSet.fileNames,(40,120),roi=roi)
+ 
+# perform ICA
+    if mode not in ['s','v']:
+        ica = FastICA(n_components=100,whiten=True)
+        ica.fit(X)
+        meanI=np.mean(X,axis=0)
+        X1=X-meanI
+        data=ica.transform(X1)
+        filters=ica.components_
+        
+    elif mode in ['s','v']:
+        W=np.load('/home/attale00/Desktop/classifiers/patches/filterMP1.npy')
+        m=np.load('/home/attale00/Desktop/classifiers/patches/meanIMP1.npy')
+        X1=X-m
+        data=np.dot(X1,W.T)    
+    
     for i in range(len(fileNames)):
-        testSet.data[i].extend(data[i,:])
+            testSet.data[i].extend(data[i,:])
 
 
     strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-    #fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = 3, cells_per_block=(6,2),maskFromAlpha=False)
-    #fg.getColorHistogram(testSet,roi,path=path_ea,ending='.png',colorspace='lab',bins=10)
+    #fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = 5, cells_per_block=(3,3),pixels_per_cell=(24,8),maskFromAlpha=False)
+    #fg.getColorHistogram(testSet,roi,path=path_ea,ending='.png',colorspace='lab',bins=20)
 
   
     #pca
@@ -102,7 +115,9 @@ def main(mode):
             
     
     testSet.targetNum=map(utils.mapMouthLabels2Two,testSet.target)
-    rf=classifierUtils.standardRF(max_features = np.sqrt(len(testSet.data[0])),min_split=5,max_depth=40)
+    rf=classifierUtils.standardRF(max_features = 27,min_split=13,max_depth=40)
+    #rf = svm.NuSVC()
+    #rf = linear_model.SGDClassifier(loss='perceptron', eta0=1, learning_rate='constant', penalty=None)    
     if mode in ['s','v']:
         print 'Classifying with loaded classifier'
         _classifyWithOld(path,testSet,mode)
@@ -118,15 +133,17 @@ def main(mode):
 def _saveRF(testSet,rf,filters=None,meanI=None):
    
     rf.fit(testSet.data,testSet.targetNum)
-    root='/home/attale00/Desktop/classifiers/ica/'
+    root='/home/attale00/Desktop/classifiers/patches/'
     
-    pickle.dump(rf,open(root+'rf128ICAHOGCOLOR','w'))
+    pickle.dump(rf,open(root+'rfICAHogColor','w'))
     
-    f=open(root+'rf128ica.txt','w')
+    f=open(root+'rficahogcolor.txt','w')
     f.write('Source Images: AFLWALL')
     f.write('attribute: Mouth')
-    f.write('Features: ICA')
+    f.write('Features: ICA HOg color')
     f.write('100 comps \n')
+    f.write('20 color bins \n')
+    f.write('ppc 24,8, cpb 3,3 dir 5 \n')
     f.write('ROI:(50,74,96,160)\n')
  
     f.write('labels: none: 0, light,thick: 1\n')
@@ -139,7 +156,7 @@ def _saveRF(testSet,rf,filters=None,meanI=None):
 
 def _classifyWithOld(path,testSet,mode):
     #f=file('/home/attale00/Desktop/classifiers/RandomForestMouthclassifier_1','r')
-    f=file('/home/attale00/Desktop/classifiers/SVMMouth_1','r')
+    f=file('/home/attale00/Desktop/classifiers/patches/rfICAMultiPie','r')
     clf = pickle.load(f)
     testSet.classifiedAs=clf.predict(testSet.data)
     testSet.hasBeenClassified = True
