@@ -61,7 +61,10 @@ for i in range(len(fileNames)):
 
 fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = 5, cells_per_block=(3,3),pixels_per_cell=(24,8),maskFromAlpha=False)
 #
-fg.getColorHistogram(testSet,roi,path=path_ea,ending='.png',colorspace='lab',bins=20)
+fg.getColorHistogram(testSet,(0,40,40,80),path=path_ea,ending='.png',colorspace='lab',bins=20)
+    #fg.getImagePatchStat(testSet,path=path_ea,patchSize=(4,12))
+fg.getImagePatchStat(testSet,path='/local/attale00/AFLW_cropped/mouth_img_error/',patchSize=(4,12))
+
 
 DATA=np.zeros((len(testSet.data),len(testSet.data[0])))
 
@@ -78,11 +81,11 @@ testSet.targetNum=map(utils.mapMouthLabels2Two,testSet.target)
 # classifier
 clf = RandomForestClassifier()
 
-parameters = {'n_estimators': range(10, 120,10),
-                  'max_depth': range(5, 50,5),
-                'min_samples_split':range(5,80,2),
-                'max_features':range(3,51,3),
-                'min_samples_leaf':range(1,31,2)}
+parameters = {'n_estimators': range(80, 160,20),
+                  'max_depth': range(50, 110,20),
+                'min_samples_split':range(5,35,5),
+                'max_features':range(25,55,10),
+                'min_samples_leaf':range(1,10,5)}
 
 #if __name__ == "__main__":
 # multiprocessing requires the fork to happen in a __main__ protected

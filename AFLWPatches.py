@@ -59,7 +59,9 @@ def main(mode):
     
     
     roi=(0,37,0,115)
-    roi=None    
+    roi=None
+    filters = None
+    meanI = None    
     #roi=(44,84,88,168)    
     
     
@@ -74,7 +76,8 @@ def main(mode):
             
  
     X=fg.getAllImagesFlat(path_ea,testSet.fileNames,(40,120),roi=roi)
- 
+#    X=fg.getAllImagesFlat(path_ea,testSet.fileNames,(120,40),roi=roi,resizeFactor = .5)
+# 
 # perform ICA
     if mode not in ['s','v']:
         ica = FastICA(n_components=100,whiten=True)
@@ -94,10 +97,11 @@ def main(mode):
             testSet.data[i].extend(data[i,:])
 
 
-    strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-    #fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = 5, cells_per_block=(3,3),pixels_per_cell=(24,8),maskFromAlpha=False)
-    #fg.getColorHistogram(testSet,roi,path=path_ea,ending='.png',colorspace='lab',bins=20)
-
+    #strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+    fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = 5, cells_per_block=(3,3),pixels_per_cell=(24,8),maskFromAlpha=False)
+    fg.getColorHistogram(testSet,(0,40,40,80),path=path_ea,ending='.png',colorspace='lab',bins=20)
+    #fg.getImagePatchStat(testSet,path=path_ea,patchSize=(4,12))
+    #fg.getImagePatchStat(testSet,path='/local/attale00/AFLW_cropped/mouth_img_error/',patchSize=(4,12))
   
     #pca
 #    n_samples, n_features = X.shape
@@ -115,7 +119,7 @@ def main(mode):
             
     
     testSet.targetNum=map(utils.mapMouthLabels2Two,testSet.target)
-    rf=classifierUtils.standardRF(max_features = 27,min_split=13,max_depth=40)
+    rf=classifierUtils.standardRF(max_features = 23,min_split=12,max_depth=45)
     #rf = svm.NuSVC()
     #rf = linear_model.SGDClassifier(loss='perceptron', eta0=1, learning_rate='constant', penalty=None)    
     if mode in ['s','v']:
@@ -124,6 +128,8 @@ def main(mode):
     elif mode in ['c']:
         print 'cross validation of data'
         classifierUtils.dissectedCV(rf,testSet)
+        s=classifierUtils.standardCrossvalidation(rf,testSet)
+        print s
     elif mode in ['save']:
         print 'saving new classifier'
         _saveRF(testSet,rf,filters=filters,meanI=meanI)
@@ -140,7 +146,7 @@ def _saveRF(testSet,rf,filters=None,meanI=None):
     f=open(root+'rficahogcolor.txt','w')
     f.write('Source Images: AFLWALL')
     f.write('attribute: Mouth')
-    f.write('Features: ICA HOg color')
+    f.write('Features: ICA HOg color Errorpatches')
     f.write('100 comps \n')
     f.write('20 color bins \n')
     f.write('ppc 24,8, cpb 3,3 dir 5 \n')
@@ -149,8 +155,8 @@ def _saveRF(testSet,rf,filters=None,meanI=None):
     f.write('labels: none: 0, light,thick: 1\n')
     f.close()
     if filters is not None:
-        np.save(root+'filter1',filters)
-        np.save(root+'meanI1',meanI)
+        np.save(root+'filter2',filters)
+        np.save(root+'meanI2',meanI)
         
 
 

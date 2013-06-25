@@ -103,6 +103,22 @@ def plotExcerpt(path='/local/attale00/GoodPose/extracted_alpha/grayScale',roi=(0
 
     print('done')
     
+def plotPoses(posesdic):
+        p={'140':'-15', '080':'-45', '190':'45', '130':'-30', '050':'15', '051':'0', '041':'30'}
+        l=['080','130','140','051','050','041','190']
+        totals={}
+        per=[]
+        for i in l:
+            n=sum(posesdic[i])
+            totals[p[i]]=n
+            per.append(posesdic[i][1]*1./n)
+        
+        plt.bar(range(len(totals)),per)
+        labels =[p[i] for i in l]
+        labels = [i +'\n n={}'.format(totals[i]) for i in labels ]
+        plt.xticks(range(len(totals)),labels)
+        plt.show()
+    
 
 class ClassifiedImViewer:
     def __init__(self,path,dataset,suffix = '.png'):
@@ -134,6 +150,7 @@ class ClassifiedImViewer:
         self.ax.imshow(im)
         if self.dataset.hasBeenClassified:
             text = 'Name: '+name + ', label: '+self.dataset.target[self.counter]+ ', classified as: {}'.format(self.dataset.classifiedAs[self.counter])
+            text +='\n Probabilities: {} {}'.format(self.dataset.probabilities[self.counter][0],self.dataset.probabilities[self.counter][1])
         else:
             text = 'Name: '+name + ', label: '+self.dataset.target[self.counter]
 
@@ -157,4 +174,5 @@ class ClassifiedImViewer:
         plt.connect('key_press_event', self._event_fct)
         plt.show()
         
-    
+   
+            

@@ -126,6 +126,17 @@ def _classifyWithOld(path,testSet,mode):
     clf = pickle.load(f)
     testSet.classifiedAs=clf.predict(testSet.data)
     testSet.hasBeenClassified = True
+    
+    testSet.classifiedAs=clf.predict(testSet.data)
+    testSet.probabilities=clf.predict_proba(testSet.data)
+ 
+    for i in range(len(testSet.data)):
+        if testSet.probabilities[i][1]>=.35:
+            testSet.classifiedAs[i]=1
+        else:
+            testSet.classifiedAs[i]=0    
+    
+    plottingUtils.plotPoses(classifierUtils.splitByPose(testSet))
     if mode =='s':
         _score(clf,testSet)
     else:

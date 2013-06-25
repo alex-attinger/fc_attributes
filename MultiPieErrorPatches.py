@@ -37,7 +37,7 @@ from scipy import linalg
 
 def main(mode):
     path = '/local/attale00/AFLW_ALL/'
-    path_ea = '/local/attale00/AFLW_cropped/multiPIE_cropped3/'
+    path_ea = '/local/attale00/AFLW_cropped/mouth_img_error_multiPie/'
     
 
    
@@ -61,7 +61,7 @@ def main(mode):
 #    
 #    print minr
 #    
-    
+#    
    
     
     
@@ -82,32 +82,32 @@ def main(mode):
 
 
             
- 
-    X=fg.getAllImagesFlat(path_ea,testSet.fileNames,(40,120),roi=roi)
- 
-        
-    # perform ICA
-    if mode not in ['s','v']:
-        ica = FastICA(n_components=100,whiten=True)
-        ica.fit(X)
-        meanI=np.mean(X,axis=0)
-        X1=X-meanI
-        data=ica.transform(X1)
-        filters=ica.components_
-        
-    elif mode in ['s','v']:
-        W=np.load('/home/attale00/Desktop/classifiers/patches/filter2.npy')
-        m=np.load('/home/attale00/Desktop/classifiers/patches/meanI2.npy')
-        X1=X-m
-        data=np.dot(X1,W.T)    
-    
-    for i in range(len(fileNames)):
-            testSet.data[i].extend(data[i,:])
-
-    strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-    fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = 5, pixels_per_cell=(24,8),cells_per_block=(3,3),maskFromAlpha=False)
-    fg.getColorHistogram(testSet,roi,path=path_ea,ending='.png',colorspace='lab',bins=20)
-    #fg.getImagePatchStat(testSet,path='/local/attale00/AFLW_cropped/mouth_img_error_multiPie/',patchSize =(4,12))
+# 
+#    X=fg.getAllImagesFlat(path_ea,testSet.fileNames,(40,120),roi=roi)
+# 
+#        
+#    # perform ICA
+#    if mode not in ['s','v']:
+#        ica = FastICA(n_components=100,whiten=True)
+#        ica.fit(X)
+#        meanI=np.mean(X,axis=0)
+#        X1=X-meanI
+#        data=ica.transform(X1)
+#        filters=ica.components_
+#        
+#    elif mode in ['s','v']:
+#        W=np.load('/home/attale00/Desktop/classifiers/patches/filter1.npy')
+#        m=np.load('/home/attale00/Desktop/classifiers/patches/meanI1.npy')
+#        X1=X-m
+#        data=np.dot(X1,W.T)    
+#    
+#    for i in range(len(fileNames)):
+#            testSet.data[i].extend(data[i,:])
+#
+#    strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+    #fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = 5, pixels_per_cell=(24,8),cells_per_block=(3,3),maskFromAlpha=False)
+    #fg.getColorHistogram(testSet,roi,path=path_ea,ending='.png',colorspace='lab',bins=20)
+    fg.getImagePatchStat(testSet,path=path_ea,patchSize =(4,12))
   
     #pca
 #    n_samples, n_features = X.shape
@@ -134,6 +134,7 @@ def main(mode):
     elif mode in ['c']:
         print 'cross validation of data'
         classifierUtils.dissectedCV(rf,testSet)
+        print classifierUtils.standardCrossvalidation(rf,testSet)
     elif mode in ['save']:
         print 'saving new classifier'
         _saveRF(testSet,rf,filters=filters,meanI=meanI)
@@ -171,14 +172,7 @@ def _classifyWithOld(path,testSet,mode):
     clf = pickle.load(f)
     testSet.classifiedAs=clf.predict(testSet.data)
     testSet.probabilities=clf.predict_proba(testSet.data)
- 
-    for i in range(len(testSet.data)):
-        if testSet.probabilities[i][1]>=.35:
-            testSet.classifiedAs[i]=1
-        else:
-            testSet.classifiedAs[i]=0
     testSet.hasBeenClassified = True
-    print classifierUtils.splitByPose(testSet)
     if mode =='s':
         _score(clf,testSet)
     else:
@@ -196,7 +190,6 @@ def _view(clf,testSet,path):
     viewer = plottingUtils.ClassifiedImViewer(path,testSet)
     viewer.view(comparer=plottingUtils.MouthTwo2FourComparer)
     
-
     
 if __name__=='__main__':
     if len(sys.argv)==2:

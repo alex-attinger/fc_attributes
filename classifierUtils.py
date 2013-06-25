@@ -25,6 +25,21 @@ def dissectedCV(clf,dataSet,cv=3,mapping={0:'closed or narrow',1:'open or wide o
         test.classifiedAs=clf.predict(test.data)
         test.hasBeenClassified = True
         evaluateClassification(test,mapping)
+        
+def splitByPose(testSet):
+    p=['140', '080', '190', '130', '050', '051', '041']
+    poses={}    
+    for i in p:
+        poses[i]=[0,0]
+        
+    for i in range(len(testSet.fileNames)):
+        pose = testSet.fileNames[i][10:13]
+        if testSet.targetNum[i] != testSet.classifiedAs[i]:
+            #error            
+            poses[pose][0]+=1
+        else:
+            poses[pose][1]+=1
+    return poses
 
 def evaluateClassification(dataSet,mapping):
     """

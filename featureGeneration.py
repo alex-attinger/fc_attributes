@@ -2,6 +2,7 @@
 import cv2
 import numpy as np
 import customHog as chog
+from sklearn.feature_extraction.image import extract_patches_2d
 
 class dataContainer:
     def __init__(self,labelFileDict = None):
@@ -234,10 +235,57 @@ def getAllImages(path,fileNames,imsize,roi=None):
             
     return X
     
-def getAllImagesFlat(path,fileNames,imsize,roi=None):
+def getImagePatchStat(dataC,path=None,ending=None,patchSize = None,overlap = 0):
+    if len(dataC.data)==0:
+        dataC.data=['' for i in xrange(0,len(dataC.fileNames))]
+        
+    f=dataC.fileNames[12]        
+    
+    if ending is not None:
+            
+        prefix = f.split('.')[0]
+        f_name = path+prefix+ending
+    else:
+        f_name=path+f
+            
+    im = cv2.imread(f_name,-1)
+    c=np.shape(im)
+    nRows = c[0]-patchSize[0]+1
+    nCols = c[1]-patchSize[1]+1
+    
+    for i in xrange(0,len(dataC.fileNames)):
+        f=dataC.fileNames[i]        
+        if ending is not None:
+            
+            prefix = f.split('.')[0]
+            f_name = path+prefix+ending
+        else:
+            f_name=path+f
+            
+        im = cv2.imread(f_name,-1)
+        c=np.shape(im)
+        if len(c) ==3:
+            msg = str(f_name)+'only grayscale patches'
+            print msg
+            im = cv2.cvtColor(im,cv2.cv.CV_RGB2GRAY)
+            
+        p=extract_patches_2d(im,patchSize)
+        for j in range(0,p.shape[0]):
+            r=j//nCols
+            c=j%nCols
+            if r%(patchSize[0]-overlap)== 0 and c%(patchSize[1]-overlap)==0:            
+                ex=p[j]
+                dataC.data[i].extend([ex.mean(), ex.std()])
+        
+       
+     
+    print 'feature length: {}'.format(len(dataC.data[0]))
+    return
+    
+def getAllImagesFlat(path,fileNames,imsize,roi=None,resizeFactor = 1.):
     n=len(fileNames)
     if roi is None:
-        sh=(n,imsize[0]*imsize[1])
+        sh=(n,imsize[0]*imsize[1]*resizeFactor*resizeFactor)
     else:
         sh=(n,(roi[1]-roi[0])*(roi[3]-roi[2]))
     X=np.zeros(sh)
@@ -246,6 +294,9 @@ def getAllImagesFlat(path,fileNames,imsize,roi=None):
         try:
             full=path+fileNames[i]
             im=cv2.imread(full,-1)
+            if resizeFactor != 1.0:
+                shape=(int(imsize[0]*resizeFactor),int(imsize[1]*resizeFactor))
+                im=cv2.resize(im,shape)
             if im.ndim>2:
                 im = cv2.cvtColor(im,cv2.cv.CV_RGBA2GRAY)
             if roi is not None:
