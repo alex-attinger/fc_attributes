@@ -19,7 +19,7 @@ import sys
 import plottingUtils
 import classifierUtils
 from sklearn import svm
-
+from sklearn.decomposition import FastICA
 def main(mode):
     path = '/local/attale00/extracted_pascal__4__Multi-PIE'
     path_ea = path+'/color128/'
@@ -31,34 +31,33 @@ def main(mode):
     #labs=utils.parseLabelFiles(path+'/Multi-PIE/labels','mouth',labeledImages,cutoffSeq='.png',suffix='_face0.labels')
     labs=utils.parseLabelFiles('/local/attale00/a_labels','mouth',labeledImages,cutoffSeq='.png',suffix='_face0.labels')
     
-    
-    #fileNames = utils.getAllFiles(path_ea);
-    
-    
-    
-    
-    #labs=utils.parseLabelFiles(path+'/labels/labels','mouth_opening',fileNames,cutoffSeq='.png',suffix='_face0.labels')
-    
-    
-    
-    testSet = fg.dataContainer(labs)
-    
-    
+        
+    testSet = fg.dataContainer(labs)    
     roi=(50,74,96,160)
-    #roi=(44,84,88,168)    
     X=fg.getAllImagesFlat(path_ea,testSet.fileNames,(128,256),roi=roi)
-    W=np.load('/home/attale00/Desktop/classifiers/ica/filter2.npy')
-    m=np.load('/home/attale00/Desktop/classifiers/ica/meanI2.npy')
-    X-=m
-    data=np.dot(X,W.T)
-    for i in range(len(testSet.fileNames)):
+
+    
+    # perform ICA
+    if mode not in ['s','v']:
+        ica = FastICA(n_components=100,whiten=True)
+        ica.fit(X)
+        meanI=np.mean(X,axis=0)
+        X1=X-meanI
+        data=ica.transform(X1)
+        filters=ica.components_
+        
+    elif mode in ['s','v']:
+        W=np.load('/home/attale00/Desktop/classifiers/ica/filter1.npy')
+        m=np.load('/home/attale00/Desktop/classifiers/ica/meanI1.npy')
+        X1=X-m
+        data=np.dot(X1,W.T)    
+    
+    for i in range(len(testSet.data)):
         testSet.data[i].extend(data[i,:])
-#    eM=np.load('/home/attale00/Desktop/mouthMask.npy')
-#    m=cv2.resize(np.uint8(eM),(256,256));
-#    strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-#    dil = cv2.dilate(m,strel)
-#    
-#    m=dil>0;
+    
+    
+   
+
 
     strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
 
@@ -70,7 +69,7 @@ def main(mode):
     rf=classifierUtils.standardRF(max_features = np.sqrt(len(testSet.data[0])),min_split=5,max_depth=40)    
     if mode in ['s','v']:
         print 'Classifying with loaded classifier'
-        _classifyWithOld(path,testSet,mode)
+        classifierUtils.classifyWithOld(path,testSet,mode,clfPath = '/home/attale00/Desktop/classifiers/ica/rf128ICA_1')
     elif mode in ['c']:
         print 'cross validation of data'
         print 'Scores'

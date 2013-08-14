@@ -57,35 +57,34 @@ def main(mode):
 
 
             
- 
-    X=fg.getAllImagesFlat(path_ea,testSet.fileNames,(40,120),roi=roi)
-    Y=fg.getAllImagesFlat('/local/attale00/AFLW_cropped/mirrored/',testSet.fileNames,(40,120),roi=roi)
-    Z=np.concatenate((X,Y),axis=0)
+# 
+#    X=fg.getAllImagesFlat(path_ea,testSet.fileNames,(40,120),roi=roi)
+#    Y=fg.getAllImagesFlat('/local/attale00/AFLW_cropped/mirrored/',testSet.fileNames,(40,120),roi=roi)
+#    Z=np.concatenate((X,Y),axis=0)
+#    
+#    # perform ICA
+#    ica = FastICA(n_components=100,whiten=True)
+#    ica.fit(Z)
+#    meanI=np.mean(Z,axis=0)
+#    X1=X-meanI
+#    Y1=Y-meanI    
+#    data=ica.transform(X1)
+#    datam=ica.transform(Y1)
+#    filters=ica.components_
+#    for i in range(len(fileNames)):
+#        testSet.data[i].extend(data[i,:])
+#        testSetMirror.data[i].extend(datam[i,:])
+##        
+#
+#
+#
+#    strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+    orientations = 9
+    fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = orientations, cells_per_block=(3,3),pixels_per_cell=(24,8),maskFromAlpha=False)
+
+  
+    fg.getHogFeature(testSetMirror,roi,path='/local/attale00/AFLW_cropped/mirrored/', ending='.png',orientations = orientations, cells_per_block=(3,3),pixels_per_cell=(24,8))    
     
-    # perform ICA
-    ica = FastICA(n_components=100,whiten=True)
-    ica.fit(Z)
-    meanI=np.mean(Z,axis=0)
-    X1=X-meanI
-    Y1=Y-meanI    
-    data=ica.transform(X1)
-    datam=ica.transform(Y1)
-    filters=ica.components_
-    for i in range(len(fileNames)):
-        testSet.data[i].extend(data[i,:])
-        testSetMirror.data[i].extend(datam[i,:])
-#        
-
-
-
-    strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-    fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = 5, cells_per_block=(3,3),pixels_per_cell=(24,8),maskFromAlpha=False)
-    
-    fg.getColorHistogram(testSet,roi,path=path_ea,ending='.png',colorspace='lab',bins=20)
-    #mirror part
-    fg.getHogFeature(testSetMirror,roi,path='/local/attale00/AFLW_cropped/mirrored/', ending='.png',orientations = 5, cells_per_block=(3,3),pixels_per_cell=(24,8))    
-    fg.getColorHistogram(testSetMirror,roi,path='/local/attale00/AFLW_cropped/mirrored/',ending = '.png',colorspace='lab',bins=20)
-        
     testSet.addContainer(testSetMirror)
   
     #pca
@@ -104,7 +103,7 @@ def main(mode):
             
     
     testSet.targetNum=map(utils.mapMouthLabels2Two,testSet.target)
-    rf=classifierUtils.standardRF(max_features = 17,min_split=7,max_depth=40,n_estimators=90)
+    rf=classifierUtils.standardRF(max_features = 17,min_split=7,max_depth=40,n_estimators=200)
     #rf = svm.NuSVC()
     #rf = linear_model.SGDClassifier(loss='perceptron', eta0=1, learning_rate='constant', penalty=None)    
     if mode in ['s','v']:

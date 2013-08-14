@@ -59,11 +59,11 @@ filters=ica.components_
 for i in range(len(fileNames)):
     testSet.data[i].extend(data[i,:])
 
-fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = 5, cells_per_block=(3,3),pixels_per_cell=(24,8),maskFromAlpha=False)
+#fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = 5, cells_per_block=(3,3),pixels_per_cell=(24,8),maskFromAlpha=False)
 #
-fg.getColorHistogram(testSet,(0,40,40,80),path=path_ea,ending='.png',colorspace='lab',bins=20)
+#fg.getColorHistogram(testSet,(0,40,40,80),path=path_ea,ending='.png',colorspace='lab',bins=20)
     #fg.getImagePatchStat(testSet,path=path_ea,patchSize=(4,12))
-fg.getImagePatchStat(testSet,path='/local/attale00/AFLW_cropped/mouth_img_error/',patchSize=(4,12))
+#fg.getImagePatchStat(testSet,path='/local/attale00/AFLW_cropped/mouth_img_error/',patchSize=(4,12))
 
 
 DATA=np.zeros((len(testSet.data),len(testSet.data[0])))
@@ -81,11 +81,11 @@ testSet.targetNum=map(utils.mapMouthLabels2Two,testSet.target)
 # classifier
 clf = RandomForestClassifier()
 
-parameters = {'n_estimators': range(80, 160,20),
+parameters = {'n_estimators': range(90, 260,20),
                   'max_depth': range(50, 110,20),
                 'min_samples_split':range(5,35,5),
-                'max_features':range(25,55,10),
-                'min_samples_leaf':range(1,10,5)}
+                'max_features':range(25,75,10),
+                'min_samples_leaf':range(1,30,5)}
 
 #if __name__ == "__main__":
 # multiprocessing requires the fork to happen in a __main__ protected
@@ -115,6 +115,7 @@ except Exception:
 #
 #plt.plot(range(len(d)),d,'*')
 #plt.show()
-pickle.dump(grid_search.param_grid,open('/local/attale00/paramgrid1','w'))
-pickle.dump(grid_search.grid_scores_,open('local/attale00/gridscores1','w'))
-pickle.dump(grid_search.best_score_,open('/local/attale00/clfICAHOGCOLOR','w'))
+root = '/local/attale00/gridsearches/'
+pickle.dump(grid_search.param_grid,open(root+'patchesPara','w'))
+pickle.dump(grid_search.grid_scores_,open(root+'patchesScore','w'))
+pickle.dump(grid_search.best_score_,open(root+'patchesBestScore','w'))

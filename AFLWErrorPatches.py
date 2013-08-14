@@ -101,7 +101,7 @@ def main(mode):
 
     #fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = 5, cells_per_block=(3,3),pixels_per_cell=(24,8),maskFromAlpha=False)
     #fg.getColorHistogram(testSet,roi,path=path_ea,ending='.png',colorspace='lab',bins=20)
-    fg.getImagePatchStat(testSet,path=path_ea,patchSize=(4,12),overlap = 2)
+    fg.getImagePatchStat(testSet,path=path_ea,patchSize=(4,12),overlap = 3)
   
     #pca
 #    n_samples, n_features = X.shape
@@ -130,16 +130,16 @@ def main(mode):
         classifierUtils.dissectedCV(rf,testSet)
     elif mode in ['save']:
         print 'saving new classifier'
-        _saveRF(testSet,rf,filters=filters,meanI=meanI)
+        _saveRF(testSet,rf)
     else:
         print 'not doing anything'
         
 def _saveRF(testSet,rf,filters=None,meanI=None):
    
     rf.fit(testSet.data,testSet.targetNum)
-    root='/home/attale00/Desktop/classifiers/patches/'
+    root='/home/attale00/Desktop/classifiers/errorpatches/'
     
-    pickle.dump(rf,open(root+'rfICAHogColor','w'))
+    pickle.dump(rf,open(root+'rferror','w'))
     
     f=open(root+'rficahogcolor.txt','w')
     f.write('Source Images: AFLWALL')
@@ -160,7 +160,7 @@ def _saveRF(testSet,rf,filters=None,meanI=None):
 
 def _classifyWithOld(path,testSet,mode):
     #f=file('/home/attale00/Desktop/classifiers/RandomForestMouthclassifier_1','r')
-    f=file('/home/attale00/Desktop/classifiers/patches/rfICAMultiPie','r')
+    f=file('/home/attale00/Desktop/classifiers/errorpatches/rferror','r')
     clf = pickle.load(f)
     testSet.classifiedAs=clf.predict(testSet.data)
     testSet.hasBeenClassified = True

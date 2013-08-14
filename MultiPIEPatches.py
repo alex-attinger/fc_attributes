@@ -47,10 +47,11 @@ def main(mode):
     
     #labs=utils.parseLabelFiles(path+'/Multi-PIE/labels','mouth',labeledImages,cutoffSeq='.png',suffix='_face0.labels')
     labs=utils.parseLabelFiles('/local/attale00/a_labels','mouth',labeledImages,cutoffSeq='.png',suffix='_face0.labels')
-        
+    
+    #labs=dict((k,v) for (k,v) in labs.iteritems() if not v.startswith('narr'))
     
 #    
-    fileNames = labeledImages;
+    
 #    minr = 10000;
 #    for f in fileNames:
 #        im = cv2.imread(path_ea+f,-1)
@@ -101,7 +102,7 @@ def main(mode):
         X1=X-m
         data=np.dot(X1,W.T)    
     
-    for i in range(len(fileNames)):
+    for i in range(len(testSet.fileNames)):
             testSet.data[i].extend(data[i,:])
 
     strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
@@ -130,7 +131,8 @@ def main(mode):
     #rf = linear_model.SGDClassifier(loss='perceptron', eta0=1, learning_rate='constant', penalty=None)    
     if mode in ['s','v']:
         print 'Classifying with loaded classifier'
-        _classifyWithOld(path,testSet,mode)
+        
+        classifierUtils.classifyWithOld(path,testSet,mode,clfPath = '/home/attale00/Desktop/classifiers/patches/rfICAHogColor')
     elif mode in ['c']:
         print 'cross validation of data'
         classifierUtils.dissectedCV(rf,testSet)
@@ -164,38 +166,38 @@ def _saveRF(testSet,rf,filters=None,meanI=None):
         
 
 
-def _classifyWithOld(path,testSet,mode):
-    #f=file('/home/attale00/Desktop/classifiers/RandomForestMouthclassifier_1','r')
-    f=file('/home/attale00/Desktop/classifiers/patches/rfICAHogColor','r')
-    print 'classifier used: '+ f.name
-    clf = pickle.load(f)
-    testSet.classifiedAs=clf.predict(testSet.data)
-    testSet.probabilities=clf.predict_proba(testSet.data)
- 
-    for i in range(len(testSet.data)):
-        if testSet.probabilities[i][1]>=.35:
-            testSet.classifiedAs[i]=1
-        else:
-            testSet.classifiedAs[i]=0
-    testSet.hasBeenClassified = True
-    print classifierUtils.splitByPose(testSet)
-    if mode =='s':
-        _score(clf,testSet)
-    else:
-        _view(clf,testSet,'/local/attale00/AFLW_cropped/multiPIE_cropped3/')
-        _score(clf,testSet)
-     
-
-def _score(clf,testSet):
-    score = clf.score(testSet.data,testSet.targetNum)
-    testSet.hasBeenClassified = True
-    classifierUtils.evaluateClassification(testSet,{0:'closed or narrow',1:'open or wide open'})
-    print 'Overall Score: {:.3f}'.format(score)
-    return
-def _view(clf,testSet,path):
-    viewer = plottingUtils.ClassifiedImViewer(path,testSet)
-    viewer.view(comparer=plottingUtils.MouthTwo2FourComparer)
-    
+#def _classifyWithOld(path,testSet,mode):
+#    #f=file('/home/attale00/Desktop/classifiers/RandomForestMouthclassifier_1','r')
+#    f=file('/home/attale00/Desktop/classifiers/patches/rfICAHogColor','r')
+#    print 'classifier used: '+ f.name
+#    clf = pickle.load(f)
+#    testSet.classifiedAs=clf.predict(testSet.data)
+#    testSet.probabilities=clf.predict_proba(testSet.data)
+# 
+#    for i in range(len(testSet.data)):
+#        if testSet.probabilities[i][1]>=.35:
+#            testSet.classifiedAs[i]=1
+#        else:
+#            testSet.classifiedAs[i]=0
+#    testSet.hasBeenClassified = True
+#    print classifierUtils.splitByPose(testSet)
+#    if mode =='s':
+#        _score(clf,testSet)
+#    else:
+#        _view(clf,testSet,'/local/attale00/AFLW_cropped/multiPIE_cropped3/')
+#        _score(clf,testSet)
+#     
+#
+#def _score(clf,testSet):
+#    score = clf.score(testSet.data,testSet.targetNum)
+#    testSet.hasBeenClassified = True
+#    classifierUtils.evaluateClassification(testSet,{0:'closed or narrow',1:'open or wide open'})
+#    print 'Overall Score: {:.3f}'.format(score)
+#    return
+#def _view(clf,testSet,path):
+#    viewer = plottingUtils.ClassifiedImViewer(path,testSet)
+#    viewer.view(comparer=plottingUtils.MouthTwo2FourComparer)
+#    
 
     
 if __name__=='__main__':

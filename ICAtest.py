@@ -33,12 +33,13 @@ mpFiles = utils.getAllFiles(path_mp)
     
 roi=(50,74,96,160)
 X=fg.getAllImagesFlat(path_ea,fileNames,(128,256),roi=roi)
-Y=fg.getAllImagesFlat(path_mp,mpFiles,(128,256),roi=roi)
-Z=np.concatenate((X,Y),axis=0)
-# perform ICA
-#ica = FastICA(n_components=49,whiten=True)
-#ica.fit(X)
-#filters = ica.unmixing_matrix_
+#Y=fg.getAllImagesFlat(path_mp,mpFiles,(128,256),roi=roi)
+#Z=np.concatenate((X,Y),axis=0)
+Z=X
+ ##perform ICA
+ica = FastICA(n_components=49,whiten=True)
+ica.fit(X)
+filters = ica.unmixing_matrix_
 
 
 #pca
@@ -54,8 +55,8 @@ Z=np.concatenate((X,Y),axis=0)
 #filters=K[:49]
 
 #factor analysis
-FA=FactorAnalysis(n_components=49)
-FA.fit(X)
+#FA=FactorAnalysis(n_components=49)
+#FA.fit(X)
 
  
 # plot filters

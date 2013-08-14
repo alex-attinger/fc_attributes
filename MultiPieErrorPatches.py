@@ -70,44 +70,8 @@ def main(mode):
     
     roi=(0,37,0,115)
     roi=None    
-    #roi=(44,84,88,168)    
-    
-    
-#    eM=np.load('/home/attale00/Desktop/mouthMask.npy')
-#    m=cv2.resize(np.uint8(eM),(256,256));
-#    strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-#    dil = cv2.dilate(m,strel)
-#    
-#    m=dil>0;
 
-
-            
-# 
-#    X=fg.getAllImagesFlat(path_ea,testSet.fileNames,(40,120),roi=roi)
-# 
-#        
-#    # perform ICA
-#    if mode not in ['s','v']:
-#        ica = FastICA(n_components=100,whiten=True)
-#        ica.fit(X)
-#        meanI=np.mean(X,axis=0)
-#        X1=X-meanI
-#        data=ica.transform(X1)
-#        filters=ica.components_
-#        
-#    elif mode in ['s','v']:
-#        W=np.load('/home/attale00/Desktop/classifiers/patches/filter1.npy')
-#        m=np.load('/home/attale00/Desktop/classifiers/patches/meanI1.npy')
-#        X1=X-m
-#        data=np.dot(X1,W.T)    
-#    
-#    for i in range(len(fileNames)):
-#            testSet.data[i].extend(data[i,:])
-#
-#    strel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-    #fg.getHogFeature(testSet,roi,path=path_ea,ending='.png',extraMask = None,orientations = 5, pixels_per_cell=(24,8),cells_per_block=(3,3),maskFromAlpha=False)
-    #fg.getColorHistogram(testSet,roi,path=path_ea,ending='.png',colorspace='lab',bins=20)
-    fg.getImagePatchStat(testSet,path=path_ea,patchSize =(4,12))
+    fg.getImagePatchStat(testSet,path=path_ea,patchSize=(4,12),overlap = 2)
   
     #pca
 #    n_samples, n_features = X.shape
@@ -130,7 +94,7 @@ def main(mode):
     #rf = linear_model.SGDClassifier(loss='perceptron', eta0=1, learning_rate='constant', penalty=None)    
     if mode in ['s','v']:
         print 'Classifying with loaded classifier'
-        _classifyWithOld(path,testSet,mode)
+        classifierUtils.classifyWithOld(path,testSet,mode,clfPath = '/home/attale00/Desktop/classifiers/errorpatches/rferror')
     elif mode in ['c']:
         print 'cross validation of data'
         classifierUtils.dissectedCV(rf,testSet)

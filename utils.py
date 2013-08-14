@@ -11,6 +11,37 @@ import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 
+def getFileNamesFP(data):
+    '''
+    data: list of tuples with t[0]: label
+                                t[1]:probability
+                                
+    '''
+    data = sorted(data,lambda x,y: cmp(y[1],x[1]))    
+#    prob = [p[1] for p in data]
+#    labels = [p[0] for p in data]
+#    fn = [p[2] for p in data]
+#    
+#    names =[]
+#    idx = 0    
+#    
+#    for i in range(n):
+#        out = prob.index(0,idx)
+
+    return [(v,n) for n,v in enumerate(data) if v[0]==0]
+    
+def getFileNamesFN(data):
+    '''
+    data: list of tuples with t[0]: label
+                                t[1]:probability
+                                
+    '''
+    data = sorted(data,lambda x,y: cmp(x[1],y[1]))
+
+    return [(v,n) for n,v in enumerate(data) if v[0]==1]
+    
+    
+
 def mirror(src_dir,file_in=[],dest='.',roi=None):
     for f in file_in:
         try:
@@ -83,7 +114,7 @@ def mapLabelToNumbers(labelList,mapping):
         out.append(mapping[labelList[i]])
     return out
   
-def mapGlassesLabels2Two(label):
+def mapGlassesLabels(label):
     '''
     maps label name strings to 4 numbers, to be used with map function
     '''
@@ -92,7 +123,7 @@ def mapGlassesLabels2Two(label):
     if label == 'light' or label=='thin':
         return 1
     if label == 'thick':
-        return 1
+        return 2
     raise Exception(label +' does not have a mapping')
 def maptwo2GlassesLabel(label):
     if label == 0:

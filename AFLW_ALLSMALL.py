@@ -6,21 +6,7 @@ Created on Tue Jun  4 10:25:06 2013
 """
 
 # -*- coding: utf-8 -*-
-"""
-Created on Tue May  7 17:29:01 2013
 
-@author: attale00
-"""
-
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Apr 12 15:24:39 2013
-
-This script classifies the multipie pictures with the random forest classifer learned on the aflw database pics
-. It was trained on hog features only on the down scaled images. see the accompanying info file to the classfier for details
-
-@author: attale00
-"""
 
 import utils
 import featureGeneration as fg
@@ -67,13 +53,15 @@ def main(mode):
             
  
     X=fg.getAllImagesFlat(path_ea,testSet.fileNames,(128,256),roi=roi)
-    Y=fg.getAllImagesFlat(path_mp,mpFiles,(128,256),roi=roi)
-    Z=np.concatenate((X,Y),axis=0)
+    #Y=fg.getAllImagesFlat(path_mp,mpFiles,(128,256),roi=roi)
+    #Z=np.concatenate((X,Y),axis=0)
+    Z=X
 #        
     # perform ICA
     ica = FastICA(n_components=50,whiten=True)
     ica.fit(Z)
     meanI=np.mean(X,axis=0)
+    
     X1=X-meanI
     data=ica.transform(X1)
     filters=ica.components_
@@ -120,7 +108,7 @@ def _saveRF(testSet,rf,filters=None,meanI=None):
     rf.fit(testSet.data,testSet.targetNum)
     root='/home/attale00/Desktop/classifiers/ica/'
     
-    pickle.dump(rf,open(root+'rf128ICAHOGCOLOR','w'))
+    pickle.dump(rf,open(root+'rf128ICA_1','w'))
     
     f=open(root+'rf128ica.txt','w')
     f.write('Source Images: AFLWALL')

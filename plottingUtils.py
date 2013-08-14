@@ -10,6 +10,29 @@ import utils
 import cv2
 
 
+def coloredProbabilityDistribution(data):
+    '''
+    data: list of tuples with t[0]: label
+                                t[1]:probability
+                                
+    '''
+    data = sorted(data,lambda x,y: cmp(y[1],x[1]))    
+    prob = [p[1] for p in data]
+    labels = [p[0] for p in data ]
+    c=['r' if i==0 else 'b' for i in labels]
+    s=[10 for i in labels]
+    for i in range(1,len(prob)-1):
+        if c[i-1]== c[i+1] and c[i-1]!=c[i]:
+            s[i]=20
+    plt.figure()
+    plt.title('Sorted Probabilities')
+    plt.xlabel('Sample number')
+    plt.ylabel('Probability of Class 1')
+    plt.grid()
+    plt.scatter(range(0,len(prob)),prob,c=c,marker=',',edgecolors='None',s=s,alpha=.5)    
+    
+    
+
 def showICAComponents(components,size,nR,nC):
     plt.figure()
     counter = 1
@@ -104,21 +127,27 @@ def plotExcerpt(path='/local/attale00/GoodPose/extracted_alpha/grayScale',roi=(0
     print('done')
     
 def plotPoses(posesdic):
-        p={'140':'-15', '080':'-45', '190':'45', '130':'-30', '050':'15', '051':'0', '041':'30'}
-        l=['080','130','140','051','050','041','190']
-        totals={}
-        per=[]
-        for i in l:
-            n=sum(posesdic[i])
-            totals[p[i]]=n
-            per.append(posesdic[i][1]*1./n)
         
+        totals,per,labels = _sortPoseforbarplot(posesdic)
+        
+        plt.figure()
         plt.bar(range(len(totals)),per)
-        labels =[p[i] for i in l]
-        labels = [i +'\n n={}'.format(totals[i]) for i in labels ]
+
         plt.xticks(range(len(totals)),labels)
         plt.show()
     
+def _sortPoseforbarplot(posesdic):
+    p={'140':'-15', '080':'-45', '190':'45', '130':'-30', '050':'15', '051':'0', '041':'30'}
+    l=['080','130','140','051','050','041','190']
+    totals={}
+    per=[]
+    for i in l:
+        n=sum(posesdic[i])
+        totals[p[i]]=n
+        per.append(posesdic[i][1]*1./n)
+    labels =[p[i] for i in l]
+    labels = [i +'\n n={}'.format(totals[i]) for i in labels ]
+    return (totals,per,labels)
 
 class ClassifiedImViewer:
     def __init__(self,path,dataset,suffix = '.png'):

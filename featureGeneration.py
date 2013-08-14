@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import customHog as chog
 from sklearn.feature_extraction.image import extract_patches_2d
+import utils
 
 class dataContainer:
     def __init__(self,labelFileDict = None):
@@ -105,6 +106,16 @@ def getHogFeature(dataC,roi,path=None,ending=None,extraMask = None,orientations=
         dataC.data[i].extend(vals)
      
     print 'hog-feature Lengths: {}'.format(len(vals))
+    return
+    
+def getPoseLabel(dataC,pathToPoseFiles):
+    for i in range(len(dataC.fileNames)):
+        f=dataC.fileNames[i]
+        f=f.split('.')[0]
+        f=f+'.frog'
+        pose = utils.parseSingleLabelFile(pathToPoseFiles+f,'rotY')
+        pose = np.double(pose)*180/np.pi
+        dataC.data[i].append(pose)
     return
     
 def getColorHistogram(dataC,roi,path=None,ending=None,colorspace=None,bins = 9,range=(1.0,255.0)):
@@ -235,7 +246,7 @@ def getAllImages(path,fileNames,imsize,roi=None):
             
     return X
     
-def getImagePatchStat(dataC,path=None,ending=None,patchSize = None,overlap = 0):
+def getImagePatchStat(dataC,path=None,ending=None,patchSize = None,overlap = 0,mode=0):
     if len(dataC.data)==0:
         dataC.data=['' for i in xrange(0,len(dataC.fileNames))]
         
@@ -275,7 +286,12 @@ def getImagePatchStat(dataC,path=None,ending=None,patchSize = None,overlap = 0):
             c=j%nCols
             if r%(patchSize[0]-overlap)== 0 and c%(patchSize[1]-overlap)==0:            
                 ex=p[j]
-                dataC.data[i].extend([ex.mean(), ex.std()])
+                if mode == 0:
+                    dataC.data[i].extend([ex.mean(), ex.std()])
+                if mode == 1:
+                    dataC.data[i].extend([ex.mean()])
+                if mode == 2:
+                    dataC.data[i].extend([ex.std()])
         
        
      
